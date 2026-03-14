@@ -17,12 +17,12 @@
         <div class="container nav-wrapper">
             <a href="{{ url_for('home') }}" class="logo">🎬 Movie Explorer</a>
 
-            <form action="{{ url_for('search') }}" method="post" class="nav-search-form">
+            <form action="{{ url_for('search') }}" method="post" class="nav-search-form desktop-search-form">
                 <input type="text" name="title" placeholder="Cerca film o serie TV..." required>
                 <button type="submit">Cerca</button>
             </form>
 
-            <nav class="nav">
+            <nav class="nav desktop-nav">
                 <a href="{{ url_for('home') }}">Home</a>
                 <a href="{{ url_for('favorites') }}">Preferiti</a>
 
@@ -36,6 +36,39 @@
                     <a href="{{ url_for('register') }}">Registrati</a>
                 {% endif %}
             </nav>
+
+            <div class="mobile-nav">
+                <a href="{{ url_for('home') }}" class="mobile-home-link">Home</a>
+
+                <button class="mobile-search-toggle" type="button" aria-label="Apri ricerca">
+                    Cerca
+                </button>
+
+                <button class="mobile-menu-toggle" type="button" aria-label="Apri menu">
+                    ☰
+                </button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="mobile-search-panel">
+                <form action="{{ url_for('search') }}" method="post" class="nav-search-form mobile-search-form">
+                    <input type="text" name="title" placeholder="Cerca film o serie TV..." required>
+                    <button type="submit">Cerca</button>
+                </form>
+            </div>
+
+            <div class="mobile-dropdown-menu">
+                <a href="{{ url_for('favorites') }}">Preferiti</a>
+
+                {% if session.get("user_id") %}
+                    <a href="{{ url_for('account') }}">Account</a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('register') }}">Registrati</a>
+                {% endif %}
+            </div>
         </div>
     </header>
 
@@ -177,6 +210,44 @@
             const firstCard = focusables.find(el => el.classList.contains("tv-focusable"));
             if (firstCard) firstCard.focus();
         }
+
+        const menuBtn = document.querySelector(".mobile-menu-toggle");
+        const searchBtn = document.querySelector(".mobile-search-toggle");
+        const dropdown = document.querySelector(".mobile-dropdown-menu");
+        const searchPanel = document.querySelector(".mobile-search-panel");
+
+        if (menuBtn && dropdown) {
+            menuBtn.addEventListener("click", function () {
+                dropdown.classList.toggle("open");
+                if (searchPanel) {
+                    searchPanel.classList.remove("open");
+                }
+            });
+        }
+
+        if (searchBtn && searchPanel) {
+            searchBtn.addEventListener("click", function () {
+                searchPanel.classList.toggle("open");
+                if (dropdown) {
+                    dropdown.classList.remove("open");
+                }
+            });
+        }
+
+        document.addEventListener("click", function (event) {
+            const clickedMenuBtn = menuBtn && menuBtn.contains(event.target);
+            const clickedSearchBtn = searchBtn && searchBtn.contains(event.target);
+            const clickedDropdown = dropdown && dropdown.contains(event.target);
+            const clickedSearchPanel = searchPanel && searchPanel.contains(event.target);
+
+            if (dropdown && !clickedMenuBtn && !clickedDropdown) {
+                dropdown.classList.remove("open");
+            }
+
+            if (searchPanel && !clickedSearchBtn && !clickedSearchPanel) {
+                searchPanel.classList.remove("open");
+            }
+        });
     });
     </script>
 </body>
