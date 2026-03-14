@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Preferiti - Giammy Streaming{% endblock %}
+
+{% block content %}
+<section class="favorites-header">
+    <div class="section-card">
+        <h1>I tuoi preferiti</h1>
+        <p>Qui trovi i film e le serie che hai salvato.</p>
+    </div>
+</section>
+
+<section class="favorites-grid">
+    {% if favorites %}
+        {% for movie in favorites %}
+            <article class="favorite-card">
+                <div class="favorite-poster-wrap">
+                    {% if movie.poster and movie.poster != "N/A" %}
+                        <img src="{{ movie.poster }}" alt="Poster di {{ movie.title }}" class="favorite-poster">
+                    {% else %}
+                        <div class="poster-placeholder small">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="favorite-content">
+                    <span class="badge">{{ movie.content_type|upper }}</span>
+                    <h2>{{ movie.title }}</h2>
+                    <p class="favorite-meta">{{ movie.year }} · {{ movie.genre }}</p>
+                    <p class="favorite-plot">{{ movie.plot }}</p>
+
+                    <div class="favorite-actions">
+                        {% if movie.trailer_url %}
+                            <a href="{{ movie.trailer_url }}" target="_blank" class="secondary-btn">Trailer</a>
+                        {% endif %}
+
+                        <form action="{{ url_for('remove_from_favorites', imdb_id=movie.imdb_id) }}" method="post">
+                            <button type="submit" class="danger-btn">Rimuovi</button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    {% else %}
+        <div class="section-card empty-state">
+            <h2>Nessun preferito salvato</h2>
+            <p>Cerca un film dalla home e aggiungilo ai preferiti.</p>
+            <a href="{{ url_for('home') }}" class="primary-btn">Vai alla ricerca</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

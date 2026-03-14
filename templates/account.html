@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Account -Giammy Streaming{% endblock %}
+
+{% block content %}
+<section class="account-page">
+
+    <div class="account-header-card">
+        <div class="account-avatar">
+            {{ session.get('username')[0]|upper }}
+        </div>
+
+        <div class="account-header-info">
+            <span class="badge">Profilo utente</span>
+            <h1>{{ session.get('first_name') }} {{ session.get('last_name') }}</h1>
+            <p>@{{ session.get('username') }} · {{ session.get('email') }}</p>
+        </div>
+    </div>
+
+    <div class="account-grid">
+        <div class="section-card account-section">
+    <h2>Azioni account</h2>
+
+    <div class="account-actions">
+        <form action="{{ url_for('request_password_otp') }}" method="post">
+            <button type="submit" class="secondary-btn">Cambia password via OTP</button>
+        </form>
+
+        <a href="{{ url_for('favorites') }}" class="secondary-btn">I miei preferiti</a>
+
+        <form action="{{ url_for('request_delete_otp') }}" method="post">
+            <button type="submit" class="danger-btn">Elimina account</button>
+        </form>
+    </div>
+</div>
+        </div>
+
+        <div class="section-card account-section">
+            <h2>Ricerche recenti</h2>
+
+            {% if recent_searches %}
+                <div class="recent-searches-list">
+                    {% for item in recent_searches %}
+                        <div class="recent-search-item">
+                            <span>{{ item.query }}</span>
+                            <small>{{ item.created_at }}</small>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="account-empty-text">Non hai ancora effettuato ricerche recenti.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</section>
+{% endblock %}

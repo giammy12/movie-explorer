@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Movie Explorer{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0b1020">
+</head>
+<body>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <header class="site-header">
+        <div class="container nav-wrapper">
+            <a href="{{ url_for('home') }}" class="logo">🎬 Movie Explorer</a>
+
+            <form action="{{ url_for('search') }}" method="post" class="nav-search-form">
+                <input type="text" name="title" placeholder="Cerca film o serie TV..." required>
+                <button type="submit">Cerca</button>
+            </form>
+
+            <nav class="nav">
+                <a href="{{ url_for('home') }}">Home</a>
+                <a href="{{ url_for('favorites') }}">Preferiti</a>
+
+                {% if session.get("user_id") %}
+                    <a href="{{ url_for('account') }}" class="nav-avatar" title="Account">
+                        {{ session.get("first_name", "U")[0]|upper }}
+                    </a>
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Login</a>
+                    <a href="{{ url_for('register') }}">Registrati</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <div class="container">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-wrapper">
+                        {% for message in messages %}
+                            <div class="flash-message">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <div>
+                <a href="{{ url_for('home') }}" class="logo">🎬 Movie Explorer</a>
+                <p class="footer-copy">
+                    Esplora film e serie TV con un'interfaccia moderna e comoda anche su TV.
+                </p>
+            </div>
+
+            <div class="footer-links">
+                <a href="{{ url_for('privacy') }}">Privacy</a>
+                <a href="{{ url_for('terms') }}">Termini</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const selectors = ".tv-focusable, .primary-btn, .secondary-btn, select, button, a[href]";
+        let focusables = Array.from(document.querySelectorAll(selectors))
+            .filter(el => el.offsetParent !== null);
+
+        function refreshFocusables() {
+            focusables = Array.from(document.querySelectorAll(selectors))
+                .filter(el => el.offsetParent !== null);
+        }
+
+        function getRect(el) {
+            return el.getBoundingClientRect();
+        }
+
+        function moveFocus(direction) {
+            refreshFocusables();
+
+            const active = document.activeElement;
+            if (!active || !focusables.includes(active)) {
+                if (focusables.length) {
+                    focusables[0].focus();
+                }
+                return;
+            }
+
+            const currentRect = getRect(active);
+            let candidates = focusables.filter(el => el !== active);
+
+            if (direction === "right") {
+                candidates = candidates.filter(el => getRect(el).left >= currentRect.left - 10);
+            } else if (direction === "left") {
+                candidates = candidates.filter(el => getRect(el).right <= currentRect.right + 10);
+            } else if (direction === "down") {
+                candidates = candidates.filter(el => getRect(el).top >= currentRect.top - 10);
+            } else if (direction === "up") {
+                candidates = candidates.filter(el => getRect(el).bottom <= currentRect.bottom + 10);
+            }
+
+            if (!candidates.length) return;
+
+            candidates.sort((a, b) => {
+                const ra = getRect(a);
+                const rb = getRect(b);
+
+                let da, db;
+
+                if (direction === "right" || direction === "left") {
+                    da = Math.abs(ra.left - currentRect.left) + Math.abs(ra.top - currentRect.top) * 2;
+                    db = Math.abs(rb.left - currentRect.left) + Math.abs(rb.top - currentRect.top) * 2;
+                } else {
+                    da = Math.abs(ra.top - currentRect.top) + Math.abs(ra.left - currentRect.left) * 2;
+                    db = Math.abs(rb.top - currentRect.top) + Math.abs(rb.left - currentRect.left) * 2;
+                }
+
+                return da - db;
+            });
+
+            const next = candidates[0];
+            if (next) {
+                next.focus();
+                next.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "nearest"
+                });
+            }
+        }
+
+        document.addEventListener("keydown", function (e) {
+            if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+
+            if (e.key === "ArrowRight") {
+                e.preventDefault();
+                moveFocus("right");
+            }
+
+            if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                moveFocus("left");
+            }
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveFocus("down");
+            }
+
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveFocus("up");
+            }
+
+            if (e.key === "Enter") {
+                const active = document.activeElement;
+                if (!active) return;
+
+                if (active.tagName === "A" || active.tagName === "BUTTON") {
+                    active.click();
+                }
+            }
+        });
+
+        if (focusables.length) {
+            const firstCard = focusables.find(el => el.classList.contains("tv-focusable"));
+            if (firstCard) firstCard.focus();
+        }
+    });
+    </script>
+</body>
+</html>

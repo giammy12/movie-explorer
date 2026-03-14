@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Risultati ricerca - Giammy Streaming{% endblock %}
+
+{% block content %}
+<section class="favorites-header">
+    <div class="section-card">
+        <h1>Risultati per "{{ query }}"</h1>
+        <p>Seleziona il contenuto che vuoi aprire.</p>
+    </div>
+</section>
+
+<section class="favorites-grid">
+    {% for movie in results %}
+        <article class="favorite-card">
+            <div class="favorite-poster-wrap">
+                {% if movie.poster_path %}
+                    <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="Poster di {{ movie.title or movie.name }}" class="favorite-poster">
+                {% else %}
+                    <div class="poster-placeholder small">Nessun poster</div>
+                {% endif %}
+            </div>
+
+            <div class="favorite-content">
+                <span class="badge">
+                    {% if movie.media_type == "movie" %}
+                        FILM
+                    {% elif movie.media_type == "tv" %}
+                        SERIE TV
+                    {% endif %}
+                </span>
+
+                <h2>{{ movie.title or movie.name }}</h2>
+
+                <p class="favorite-meta">
+                    {{ (movie.release_date or movie.first_air_date or "")[:4] if (movie.release_date or movie.first_air_date) else "Anno non disponibile" }}
+                </p>
+
+                <p class="favorite-plot">
+                    {{ movie.overview if movie.overview else "Nessuna trama disponibile." }}
+                </p>
+
+                <div class="favorite-actions">
+                    {% if movie.media_type == "movie" %}
+                        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="primary-btn">Apri dettagli</a>
+                    {% elif movie.media_type == "tv" %}
+                        <a href="{{ url_for('tv_detail', tv_id=movie.id) }}" class="primary-btn">Apri dettagli</a>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

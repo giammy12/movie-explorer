@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Movie Explorer{% endblock %}
+
+{% block content %}
+
+{% if featured_items and featured_items|length > 0 %}
+<section class="hero-slider">
+    {% for item in featured_items %}
+        <section
+            class="hero-banner hero-slide {% if loop.first %}active{% endif %}"
+            style="background-image: linear-gradient(to right, rgba(2,6,23,0.72), rgba(2,6,23,0.38), rgba(2,6,23,0.60)), url('https://image.tmdb.org/t/p/original{{ item.backdrop_path }}');"
+            data-trailer-url="{{ item.trailer_url }}"
+        >
+            <div class="hero-media-layer">
+                <div class="hero-backdrop-overlay"></div>
+
+                {% if item.trailer_url %}
+                    <iframe
+                        class="hero-trailer-frame"
+                        data-src="{{ item.trailer_url }}"
+                        frameborder="0"
+                        allow="autoplay; encrypted-media"
+                        allowfullscreen
+                    ></iframe>
+                {% endif %}
+            </div>
+
+            <div class="hero-banner-content">
+                <span class="badge">In evidenza</span>
+
+                <h1>{{ item.title }}</h1>
+
+                <div class="hero-meta">
+                    {% if item.year %}
+                        <span>{{ item.year }}</span>
+                    {% endif %}
+
+                    {% if item.rating %}
+                        <span>⭐ {{ "%.1f"|format(item.rating|float) }}</span>
+                    {% endif %}
+
+                    <span>Film</span>
+                </div>
+
+                <p>{{ item.overview }}</p>
+
+                <div class="hero-banner-actions">
+                    <a href="{{ url_for('player_movie', movie_id=item.id) }}" class="primary-btn hero-main-btn">▶️ Guarda</a>
+                    <a href="{{ url_for('movie_detail', movie_id=item.id) }}" class="secondary-btn">Dettagli</a>
+                </div>
+            </div>
+        </section>
+    {% endfor %}
+
+    <button class="hero-arrow hero-prev">‹</button>
+    <button class="hero-arrow hero-next">›</button>
+
+    <div class="hero-dots">
+        {% for item in featured_items %}
+            <button class="hero-dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}"></button>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="section-card" style="margin-bottom: 24px;">
+    <h2>Nessun contenuto in evidenza disponibile</h2>
+    <p>La hero non ha ricevuto film validi da TMDb.</p>
+</section>
+{% endif %}
+
+{% if continue_watching %}
+<section class="continue-section">
+    <div class="continue-header">
+        <div>
+            <h2>Continua a guardare</h2>
+            <p>Riprendi da dove ti eri fermato.</p>
+        </div>
+    </div>
+
+    <div class="continue-row">
+        {% for item in continue_watching %}
+            <article class="continue-card tv-focusable" tabindex="0">
+                <div class="continue-poster-wrap">
+                    {% if item.poster_path %}
+                        <img
+                            src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}"
+                            alt="Poster di {{ item.title }}"
+                            class="continue-poster"
+                            loading="lazy"
+                        >
+                    {% else %}
+                        <div class="continue-placeholder">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="continue-content">
+                    <div class="continue-top-meta">
+                        {% if item.content_type == "tv" %}
+                            <span class="badge small-badge">SERIE TV</span>
+                            {% if item.season and item.episode %}
+                                <span class="continue-episode-label">S{{ item.season }} · E{{ item.episode }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge small-badge">FILM</span>
+                        {% endif %}
+                    </div>
+
+                    <h3>{{ item.title }}</h3>
+
+                    {% if item.duration_seconds and item.progress_seconds and item.duration_seconds > 0 %}
+                        {% set progress_percent = ((item.progress_seconds / item.duration_seconds) * 100)|round(0, 'floor') %}
+                        <div class="continue-progress-bar">
+                            <div class="continue-progress-fill" style="width: {{ progress_percent }}%;"></div>
+                        </div>
+                    {% endif %}
+
+                    <div class="continue-actions">
+                        {% if item.content_type == "tv" %}
+                            <a href="{{ url_for('tv_detail', tv_id=item.tmdb_id, season=item.season, episode=item.episode) }}" class="secondary-btn continue-btn">
+                                Dettagli
+                            </a>
+                            <a href="{{ url_for('player_tv', tv_id=item.tmdb_id, season=item.season, episode=item.episode) }}" class="primary-btn continue-btn">
+                                Continua
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('movie_detail', movie_id=item.tmdb_id) }}" class="secondary-btn continue-btn">
+                                Dettagli
+                            </a>
+                            <a href="{{ url_for('player_movie', movie_id=item.tmdb_id) }}" class="primary-btn continue-btn">
+                                Continua
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>Nuove uscite</h2>
+        <p>I film attualmente più interessanti e recenti.</p>
+    </div>
+</section>
+
+<section class="compact-rail-section">
+    <div class="compact-rail">
+        {% for item in now_playing_movies %}
+            <article class="compact-card tv-focusable" tabindex="0">
+                <div class="compact-poster-wrap">
+                    {% if item.poster_path %}
+                        <img src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}" alt="Poster di {{ item.title }}" class="compact-poster" loading="lazy">
+                    {% else %}
+                        <div class="compact-placeholder">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="compact-content">
+                    <span class="badge small-badge">FILM</span>
+                    <h3>{{ item.title }}</h3>
+                    <p class="compact-year">{{ item.release_date[:4] if item.release_date else "Anno n.d." }}</p>
+
+                    <div class="compact-actions">
+                        <a href="{{ url_for('movie_detail', movie_id=item.id) }}" class="primary-btn compact-btn">Apri</a>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>Più votati</h2>
+        <p>I film meglio valutati.</p>
+    </div>
+</section>
+
+<section class="compact-rail-section">
+    <div class="compact-rail">
+        {% for item in top_rated_movies %}
+            <article class="compact-card tv-focusable" tabindex="0">
+                <div class="compact-poster-wrap">
+                    {% if item.poster_path %}
+                        <img src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}" alt="Poster di {{ item.title }}" class="compact-poster" loading="lazy">
+                    {% else %}
+                        <div class="compact-placeholder">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="compact-content">
+                    <span class="badge small-badge">FILM</span>
+                    <h3>{{ item.title }}</h3>
+                    <p class="compact-year">{{ item.release_date[:4] if item.release_date else "Anno n.d." }}</p>
+
+                    <div class="compact-actions">
+                        <a href="{{ url_for('movie_detail', movie_id=item.id) }}" class="primary-btn compact-btn">Apri</a>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>Più popolari</h2>
+        <p>I contenuti del momento.</p>
+    </div>
+</section>
+
+<section class="compact-rail-section">
+    <div class="compact-rail">
+        {% for item in popular_movies %}
+            <article class="compact-card tv-focusable" tabindex="0">
+                <div class="compact-poster-wrap">
+                    {% if item.poster_path %}
+                        <img src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}" alt="Poster di {{ item.title }}" class="compact-poster" loading="lazy">
+                    {% else %}
+                        <div class="compact-placeholder">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="compact-content">
+                    <span class="badge small-badge">FILM</span>
+                    <h3>{{ item.title }}</h3>
+                    <p class="compact-year">{{ item.release_date[:4] if item.release_date else "Anno n.d." }}</p>
+
+                    <div class="compact-actions">
+                        <a href="{{ url_for('movie_detail', movie_id=item.id) }}" class="primary-btn compact-btn">Apri</a>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>Serie da non perdere</h2>
+        <p>Le serie TV più seguite del momento.</p>
+    </div>
+</section>
+
+<section class="compact-rail-section">
+    <div class="compact-rail">
+        {% for item in popular_tv %}
+            <article class="compact-card tv-focusable" tabindex="0">
+                <div class="compact-poster-wrap">
+                    {% if item.poster_path %}
+                        <img src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}" alt="Poster di {{ item.name }}" class="compact-poster" loading="lazy">
+                    {% else %}
+                        <div class="compact-placeholder">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="compact-content">
+                    <span class="badge small-badge">SERIE TV</span>
+                    <h3>{{ item.name }}</h3>
+                    <p class="compact-year">{{ item.first_air_date[:4] if item.first_air_date else "Anno n.d." }}</p>
+
+                    <div class="compact-actions">
+                        <a href="{{ url_for('tv_detail', tv_id=item.id) }}" class="primary-btn compact-btn">Apri</a>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const slides = document.querySelectorAll(".hero-slide");
+    const dots = document.querySelectorAll(".hero-dot");
+    const prev = document.querySelector(".hero-prev");
+    const next = document.querySelector(".hero-next");
+
+    if (!slides.length) return;
+
+    let currentIndex = 0;
+    let sliderInterval;
+
+    function stopAllTrailers() {
+        slides.forEach((slide) => {
+            slide.classList.remove("is-playing");
+            const iframe = slide.querySelector(".hero-trailer-frame");
+            if (iframe) {
+                iframe.src = "";
+            }
+        });
+    }
+
+    function startTrailer(slide) {
+        const iframe = slide.querySelector(".hero-trailer-frame");
+        if (!iframe) return;
+
+        const src = iframe.dataset.src;
+        if (!src) return;
+
+        iframe.src = src;
+        slide.classList.add("is-playing");
+    }
+
+    function showSlide(index) {
+        stopAllTrailers();
+
+        slides.forEach((slide, i) => {
+            slide.classList.toggle("active", i === index);
+        });
+
+        dots.forEach((dot, i) => {
+            dot.classList.toggle("active", i === index);
+        });
+
+        currentIndex = index;
+    }
+
+    function nextSlide() {
+        const index = (currentIndex + 1) % slides.length;
+        showSlide(index);
+    }
+
+    function prevSlide() {
+        const index = (currentIndex - 1 + slides.length) % slides.length;
+        showSlide(index);
+    }
+
+    function restartSlider() {
+        clearInterval(sliderInterval);
+        sliderInterval = setInterval(nextSlide, 6000);
+    }
+
+    if (next) {
+        next.addEventListener("click", function () {
+            nextSlide();
+            restartSlider();
+        });
+    }
+
+    if (prev) {
+        prev.addEventListener("click", function () {
+            prevSlide();
+            restartSlider();
+        });
+    }
+
+    dots.forEach((dot, index) => {
+        dot.addEventListener("click", () => {
+            showSlide(index);
+            restartSlider();
+        });
+    });
+
+    slides.forEach((slide) => {
+        slide.addEventListener("mouseenter", function () {
+            startTrailer(slide);
+            clearInterval(sliderInterval);
+        });
+
+        slide.addEventListener("mouseleave", function () {
+            stopAllTrailers();
+            restartSlider();
+        });
+    });
+
+    restartSlider();
+});
+</script>
+
+{% endblock %}

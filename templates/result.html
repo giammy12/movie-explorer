@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Risultato - Giammy Streaming{% endblock %}
+
+{% block content %}
+<section class="movie-layout">
+    <div class="poster-card">
+        {% if movie.poster and movie.poster != "N/A" %}
+            <img src="{{ movie.poster }}" alt="Poster di {{ movie.title }}" class="poster-image">
+        {% else %}
+            <div class="poster-placeholder">Nessun poster disponibile</div>
+        {% endif %}
+    </div>
+
+    <div class="movie-card">
+        <div class="movie-header">
+            <div>
+                <span class="badge">{{ movie.content_type|upper }}</span>
+                <h1>{{ movie.title }}</h1>
+                <p class="movie-subtitle">{{ movie.year }} · {{ movie.genre }}</p>
+            </div>
+            <div class="rating-box">
+                <span>IMDb</span>
+                <strong>{{ movie.rating }}</strong>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span>Durata</span>
+                <strong>{{ movie.runtime }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Attori</span>
+                <strong>{{ movie.actors }}</strong>
+            </div>
+            <div class="info-item">
+                <span>ID</span>
+                <strong>{{ movie.imdb_id }}</strong>
+            </div>
+            <div class="info-item">
+                <span>Fonte</span>
+                <strong>{{ movie.source }}</strong>
+            </div>
+        </div>
+
+        <div class="plot-box">
+            <h3>Trama</h3>
+            <p>{{ movie.plot }}</p>
+        </div>
+
+        <form action="{{ url_for('add_to_favorites') }}" method="post" class="favorite-form">
+            <input type="hidden" name="title" value="{{ movie.title }}">
+            <input type="hidden" name="year" value="{{ movie.year }}">
+            <input type="hidden" name="imdb_id" value="{{ movie.imdb_id }}">
+            <input type="hidden" name="content_type" value="{{ movie.content_type }}">
+            <input type="hidden" name="genre" value="{{ movie.genre }}">
+            <input type="hidden" name="plot" value="{{ movie.plot }}">
+            <input type="hidden" name="rating" value="{{ movie.rating }}">
+            <input type="hidden" name="runtime" value="{{ movie.runtime }}">
+            <input type="hidden" name="actors" value="{{ movie.actors }}">
+            <input type="hidden" name="poster" value="{{ movie.poster }}">
+            <input type="hidden" name="source" value="{{ movie.source }}">
+            <input type="hidden" name="trailer_title" value="{{ movie.trailer_title }}">
+            <input type="hidden" name="trailer_url" value="{{ movie.trailer_url }}">
+            <input type="hidden" name="trailer_video_id" value="{{ movie.trailer_video_id }}">
+
+            <button type="submit" class="primary-btn">Aggiungi ai preferiti</button>
+        </form>
+
+        <div class="result-action-row">
+            {% if is_tv %}
+                <form method="get" action="{{ url_for('tv_detail', tv_id=movie.imdb_id|int) }}" class="inline-watch-form">
+                    <div class="inline-selectors">
+                        <select name="season" onchange="this.form.submit()">
+                            {% for season in seasons %}
+                                <option value="{{ season.season_number }}" {% if selected_season == season.season_number|string %}selected{% endif %}>
+                                    S{{ season.season_number }}
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                        <select name="episode" onchange="this.form.submit()">
+                            {% for episode in episodes %}
+                                <option value="{{ episode.episode_number }}" {% if selected_episode == episode.episode_number|string %}selected{% endif %}>
+                                    E{{ episode.episode_number }}{% if episode.name %} - {{ episode.name }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <a href="{{ url_for('player_tv', tv_id=movie.imdb_id|int, season=selected_season|int, episode=selected_episode|int) }}" class="primary-btn">
+                        Guarda episodio
+                    </a>
+                </form>
+            {% else %}
+                <div class="inline-watch-form">
+                    <a href="{{ url_for('player_movie', movie_id=movie.imdb_id|int) }}" class="primary-btn">
+                        Guarda ora
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<br>
+
+<section class="trailer-section">
+    <div class="section-card">
+        <h2>Trailer</h2>
+
+        {% if movie.trailer_video_id %}
+            <div class="trailer-frame">
+                <iframe
+                    src="https://www.youtube.com/embed/{{ movie.trailer_video_id }}"
+                    title="{{ movie.trailer_title }}"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            <p class="trailer-title">{{ movie.trailer_title }}</p>
+            <a href="{{ movie.trailer_url }}" target="_blank" class="secondary-btn">Apri su YouTube</a>
+        {% else %}
+            <p>Nessun trailer trovato.</p>
+        {% endif %}
+    </div>
+</section>
+
+<br>
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>Dove guardarlo</h2>
+
+        {% if watch_providers %}
+            {% if watch_providers.flatrate %}
+                <div class="provider-list">
+                    {% for provider in watch_providers.flatrate %}
+                        <div class="provider-item">
+                            <img src="https://image.tmdb.org/t/p/w185{{ provider.logo_path }}" alt="{{ provider.provider_name }}" class="provider-logo">
+                            <span>{{ provider.provider_name }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif watch_providers.rent %}
+                <div class="provider-list">
+                    {% for provider in watch_providers.rent %}
+                        <div class="provider-item">
+                            <img src="https://image.tmdb.org/t/p/w185{{ provider.logo_path }}" alt="{{ provider.provider_name }}" class="provider-logo">
+                            <span>{{ provider.provider_name }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif watch_providers.buy %}
+                <div class="provider-list">
+                    {% for provider in watch_providers.buy %}
+                        <div class="provider-item">
+                            <img src="https://image.tmdb.org/t/p/w185{{ provider.logo_path }}" alt="{{ provider.provider_name }}" class="provider-logo">
+                            <span>{{ provider.provider_name }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>Nessun provider disponibile per l'Italia.</p>
+            {% endif %}
+
+            {% if watch_providers.link %}
+                <div class="favorite-actions" style="margin-top: 16px;">
+                    <a href="{{ watch_providers.link }}" target="_blank" class="secondary-btn">Apri provider</a>
+                </div>
+            {% endif %}
+        {% else %}
+            <p>Nessuna informazione disponibile sui provider.</p>
+        {% endif %}
+    </div>
+</section>
+
+<br>
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>Consigliati per te</h2>
+        <p>Altri titoli che potrebbero piacerti.</p>
+    </div>
+</section>
+
+<section class="favorites-grid">
+    {% if recommendations %}
+        {% for item in recommendations %}
+            <article class="favorite-card">
+                <div class="favorite-poster-wrap">
+                    {% if item.poster_url %}
+                        <img src="{{ item.poster_url }}" alt="Poster di {{ item.title }}" class="favorite-poster">
+                    {% else %}
+                        <div class="poster-placeholder small">Nessun poster</div>
+                    {% endif %}
+                </div>
+
+                <div class="favorite-content">
+                    <span class="badge">
+                        {% if item.media_type == "tv" %}
+                            SERIE TV
+                        {% else %}
+                            FILM
+                        {% endif %}
+                    </span>
+
+                    <h2>{{ item.title }}</h2>
+                    <p class="favorite-meta">{{ item.year if item.year else "Anno non disponibile" }}</p>
+
+                    <div class="favorite-actions">
+                        {% if item.media_type == "tv" %}
+                            <a href="{{ url_for('tv_detail', tv_id=item.id) }}" class="primary-btn">Apri dettagli</a>
+                        {% else %}
+                            <a href="{{ url_for('movie_detail', movie_id=item.id) }}" class="primary-btn">Apri dettagli</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    {% else %}
+        <div class="section-card empty-state">
+            <h2>Nessun consiglio disponibile</h2>
+            <p>Non ci sono ancora titoli consigliati per questo contenuto.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

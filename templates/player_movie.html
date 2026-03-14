@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}{{ movie.title }} - Player{% endblock %}
+
+{% block content %}
+<section class="player-page">
+    <div class="section-card player-card">
+        <div class="player-top">
+            <div>
+                <span class="badge">In riproduzione</span>
+                <h1>{{ movie.title }}</h1>
+                <p class="player-subtitle">Il progresso viene salvato automaticamente.</p>
+            </div>
+
+            <div class="player-top-actions">
+                {% if is_tv %}
+                    <a href="{{ url_for('tv_detail', tv_id=movie_id, season=season, episode=episode) }}" class="secondary-btn">Dettagli</a>
+                {% else %}
+                    <a href="{{ url_for('movie_detail', movie_id=movie_id) }}" class="secondary-btn">Dettagli</a>
+                {% endif %}
+                <a href="{{ url_for('home') }}" class="secondary-btn">Home</a>
+            </div>
+        </div>
+
+        <div class="player-frame-wrap">
+            <iframe
+                id="provider-player"
+                src="{{ player_url }}"
+                title="Player di {{ movie.title }}"
+                allow="autoplay; fullscreen"
+                allowfullscreen
+                referrerpolicy="origin"
+            ></iframe>
+        </div>
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const providerOrigin = "{{ provider_origin }}";
+    const tmdbId = Number("{{ movie_id }}");
+    const isTv = {{ "true" if is_tv else "false" }};
+    const season = {{ season if season is not none else "null" }};
+    const episode = {{ episode if episode is not none else "null" }};
+
+    let lastSentTime = 0;
+    let latestCurrentTime = 0;
+    let latestDuration = 0;
+    let hasEnded = false;
+
+    function buildPayload(eventName, currentTime, duration) {
+        return {
+            tmdb_id: tmdbId,
+            event: eventName,
+            progress_seconds: Math.floor(Number(currentTime) || 0),
+            duration_seconds: Math.floor(Number(duration) || 0),
+            content_type: isTv ? "tv" : "movie",
+            season: season,
+            episode: episode
+        };
+    }
+
+    function sendProgress(eventName, currentTime, duration) {
+        const payload = buildPayload(eventName, currentTime, duration);
+
+        fetch("/api/watch-progress", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload),
+            keepalive: true
+        }).catch(() => {});
+    }
+
+    function normalizePayload(raw) {
+        if (!raw) return null;
+
+        let payload = raw;
+
+        if (typeof payload === "string") {
+            try {
+                payload = JSON.parse(payload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        if (payload.type === "PLAYER_EVENT" && payload.data) {
+            if (typeof payload.data === "string") {
+                try {
+                    payload = JSON.parse(payload.data);
+                } catch (e) {
+                    return null;
+                }
+            } else {
+                payload = payload.data;
+            }
+        }
+
+        if (payload && payload.event) {
+            return {
+                event: payload.event,
+                currentTime: Number(payload.currentTime || 0),
+                duration: Number(payload.duration || 0)
+            };
+        }
+
+        return null;
+    }
+
+    function goToNextEpisode() {
+        if (!isTv || season === null || episode === null) return;
+
+        const nextEpisode = Number(episode) + 1;
+        const nextUrl = `/player/tv/${tmdbId}/${season}/${nextEpisode}`;
+        window.location.href = nextUrl;
+    }
+
+    window.addEventListener("message", function (event) {
+        if (event.origin !== providerOrigin) {
+            return;
+        }
+
+        const data = normalizePayload(event.data);
+        if (!data) {
+            return;
+        }
+
+        const eventName = data.event;
+        const currentTime = data.currentTime;
+        const duration = data.duration;
+
+        latestCurrentTime = currentTime;
+        latestDuration = duration;
+
+        if (!eventName) return;
+
+        if (eventName === "timeupdate") {
+            if (currentTime - lastSentTime >= 10) {
+                lastSentTime = currentTime;
+                sendProgress("timeupdate", currentTime, duration);
+            }
+        }
+
+        if (eventName === "pause" || eventName === "seeked" || eventName === "play") {
+            sendProgress(eventName, currentTime, duration);
+        }
+
+        if (eventName === "ended") {
+            hasEnded = true;
+            sendProgress("ended", currentTime, duration);
+
+            if (isTv) {
+                setTimeout(function () {
+                    goToNextEpisode();
+                }, 2500);
+            }
+        }
+    });
+
+    setInterval(function () {
+        if (hasEnded) return;
+
+        if (latestCurrentTime > 0) {
+            if (latestCurrentTime - lastSentTime >= 5) {
+                lastSentTime = latestCurrentTime;
+                sendProgress("heartbeat", latestCurrentTime, latestDuration);
+            }
+        }
+    }, 10000);
+
+    window.addEventListener("beforeunload", function () {
+        if (!hasEnded && latestCurrentTime > 0) {
+            sendProgress("beforeunload", latestCurrentTime, latestDuration);
+        }
+    });
+
+    document.addEventListener("visibilitychange", function () {
+        if (document.hidden && !hasEnded && latestCurrentTime > 0) {
+            sendProgress("visibilitychange", latestCurrentTime, latestDuration);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+[
+    {
+        "title": "Interstellar",
+        "year": "2014",
+        "imdb_id": "tt0816692",
+        "content_type": "movie",
+        "genre": "Adventure, Drama, Sci-Fi",
+        "plot": "When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Joseph Cooper, is tasked to pilot a spacecraft, along with a team of researchers, to find a new planet for humans.",
+        "rating": "8.7",
+        "runtime": "169 min",
+        "actors": "Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+        "poster": "https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_SX300.jpg",
+        "source": "OMDb",
+        "trailer_title": "Interstellar - Trailer - Official Warner Bros. UK",
+        "trailer_url": "https://www.youtube.com/watch?v=zSWdZVtXT7E",
+        "trailer_video_id": "zSWdZVtXT7E"
+    },
+    {
+        "title": "The Avengers",
+        "year": "2012",
+        "imdb_id": "tt0848228",
+        "content_type": "movie",
+        "genre": "Action, Sci-Fi",
+        "plot": "Earth's mightiest heroes must come together and learn to fight as a team if they are going to stop the mischievous Loki and his alien army from enslaving humanity.",
+        "rating": "8.0",
+        "runtime": "143 min",
+        "actors": "Robert Downey Jr., Chris Evans, Scarlett Johansson",
+        "poster": "https://m.media-amazon.com/images/M/MV5BNGE0YTVjNzUtNzJjOS00NGNlLTgxMzctZTY4YTE1Y2Y1ZTU4XkEyXkFqcGc@._V1_SX300.jpg",
+        "source": "OMDb",
+        "trailer_title": "Marvel&#39;s The Avengers Trailer 2 (OFFICIAL)",
+        "trailer_url": "https://www.youtube.com/watch?v=hIR8Ar-Z4hw",
+        "trailer_video_id": "hIR8Ar-Z4hw"
+    }
+]

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Giammy Streaming{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+    <div class="auth-card">
+        <span class="badge">Bentornato</span>
+        <h1>Accedi</h1>
+        <p>Inserisci nome utente oppure email e la tua password.</p>
+
+        <form action="{{ url_for('login') }}" method="post" class="auth-form">
+            <input type="text" name="identifier" placeholder="Nome utente o email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit" class="primary-btn">Login</button>
+        </form>
+
+        <p class="auth-link">
+            Non hai un account?
+            <a href="{{ url_for('register') }}">Registrati</a>
+        </p>
+
+        <p class="auth-link">
+    <a href="{{ url_for('forgot_password') }}">Password dimenticata?</a>
+</p>
+    </div>
+</section>
+{% endblock %}

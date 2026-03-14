@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Nuova password - Giammy Streaming{% endblock %}
+
+{% block content %}
+<section class="auth-wrapper">
+    <div class="auth-card">
+        <span class="badge">Nuova password</span>
+        <h1>Cambia password</h1>
+        <p>Inserisci la tua nuova password.</p>
+
+        <form action="{{ url_for('change_password_with_otp') }}" method="post" class="auth-form">
+            <input type="password" name="password" placeholder="Nuova password" required>
+            <button type="submit" class="primary-btn">Aggiorna password</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
