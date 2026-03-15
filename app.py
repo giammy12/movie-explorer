@@ -30,6 +30,12 @@ from services.history_service import (
     mark_watch_completed,
     get_continue_watching
 )
+from services.profile_service import (
+    create_profile_for_user,
+    get_profiles_for_user,
+    get_profile_by_id_for_user
+)
+
 import secrets
 import datetime
 
@@ -38,6 +44,24 @@ app.secret_key = FLASK_SECRET_KEY
 
 init_db()
 search_service = SearchService()
+
+
+def has_active_profile():
+    return session.get("active_profile_id") is not None
+
+
+def login_required_redirect():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    return None
+
+
+def profile_required_redirect():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    if not session.get("active_profile_id"):
+        return redirect(url_for("profiles"))
+    return None
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -97,8 +121,12 @@ def login():
         session["last_name"] = user["last_name"]
         session["email"] = user["email"]
 
+        session.pop("active_profile_id", None)
+        session.pop("active_profile_name", None)
+        session.pop("active_profile_avatar", None)
+
         flash("Login effettuato con successo.")
-        return redirect(url_for("home"))
+        return redirect(url_for("profiles"))
 
     return render_template("login.html")
 
@@ -108,6 +136,86 @@ def logout():
     session.clear()
     flash("Logout effettuato con successo.")
     return redirect(url_for("home"))
+
+
+# =========================
+# PROFILI
+# =========================
+
+@app.route("/profiles")
+def profiles():
+    if not session.get("user_id"):
+        flash("Devi effettuare il login.")
+        return redirect(url_for("login"))
+
+    profiles_list = get_profiles_for_user(session["user_id"])
+    return render_template("profiles.html", profiles=profiles_list)
+
+
+@app.route("/profiles/new", methods=["GET", "POST"])
+def new_profile():
+    if not session.get("user_id"):
+        flash("Devi effettuare il login.")
+        return redirect(url_for("login"))
+
+    available_avatars = [
+        "/static/avatars/avatar1.png",
+        "/static/avatars/avatar2.png",
+        "/static/avatars/avatar3.png",
+        "/static/avatars/avatar4.png",
+        "/static/avatars/avatar5.png",
+        "/static/avatars/avatar6.png"
+    ]
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        avatar_url = request.form.get("avatar_url", "").strip()
+
+        if not name:
+            flash("Inserisci un nome profilo.")
+            return redirect(url_for("new_profile"))
+
+        if not avatar_url:
+            avatar_url = available_avatars[0]
+
+        create_profile_for_user(session["user_id"], name, avatar_url)
+
+        flash("Profilo creato con successo.")
+        return redirect(url_for("profiles"))
+
+    return render_template("new_profile.html", available_avatars=available_avatars)
+
+
+@app.route("/profiles/select/<int:profile_id>")
+def select_profile(profile_id):
+    if not session.get("user_id"):
+        flash("Devi effettuare il login.")
+        return redirect(url_for("login"))
+
+    profile = get_profile_by_id_for_user(profile_id, session["user_id"])
+
+    if not profile:
+        flash("Profilo non valido.")
+        return redirect(url_for("profiles"))
+
+    session["active_profile_id"] = profile["id"]
+    session["active_profile_name"] = profile["name"]
+    session["active_profile_avatar"] = profile["avatar_url"]
+
+    flash(f"Profilo attivo: {profile['name']}")
+    return redirect(url_for("home"))
+
+
+@app.route("/profiles/clear")
+def clear_profile():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    session.pop("active_profile_id", None)
+    session.pop("active_profile_name", None)
+    session.pop("active_profile_avatar", None)
+
+    return redirect(url_for("profiles"))
 
 
 @app.route("/forgot-password", methods=["GET", "POST"])
@@ -175,9 +283,9 @@ def reset_password(token):
 
 @app.route("/account")
 def account():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login per accedere al tuo account.")
-        return redirect(url_for("login"))
+    redirect_response = login_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     recent_searches = get_recent_searches(session["user_id"])
     return render_template("account.html", recent_searches=recent_searches)
@@ -185,9 +293,9 @@ def account():
 
 @app.route("/account/request-password-otp", methods=["POST"])
 def request_password_otp():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = login_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     otp_code = generate_otp()
     save_otp(session["user_id"], otp_code, "change_password")
@@ -204,9 +312,9 @@ def request_password_otp():
 
 @app.route("/account/verify-password-otp", methods=["GET", "POST"])
 def verify_password_otp():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = login_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     if request.method == "POST":
         otp_code = request.form.get("otp_code", "").strip()
@@ -235,9 +343,9 @@ def verify_password_otp():
 
 @app.route("/account/change-password", methods=["GET", "POST"])
 def change_password_with_otp():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = login_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     if not session.get("password_otp_verified"):
         flash("Devi prima verificare il codice OTP.")
@@ -267,9 +375,9 @@ def change_password_with_otp():
 
 @app.route("/account/request-delete-otp", methods=["POST"])
 def request_delete_otp():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = login_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     otp_code = generate_otp()
     save_otp(session["user_id"], otp_code, "delete_account")
@@ -286,9 +394,9 @@ def request_delete_otp():
 
 @app.route("/account/verify-delete-otp", methods=["GET", "POST"])
 def verify_delete_otp():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = login_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     if request.method == "POST":
         otp_code = request.form.get("otp_code", "").strip()
@@ -319,15 +427,16 @@ def verify_delete_otp():
 
 @app.route("/player/movie/<int:movie_id>")
 def player_movie(movie_id):
-    if "user_id" not in session:
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     try:
         movie = search_service.search_movie(movie_id)
 
         record = create_or_get_watch_record(
             session["user_id"],
+            session["active_profile_id"],
             movie_id,
             movie["title"],
             movie["poster"],
@@ -355,17 +464,17 @@ def player_movie(movie_id):
 
 @app.route("/player/tv/<int:tv_id>/<int:season>/<int:episode>")
 def player_tv(tv_id, season, episode):
-    if "user_id" not in session:
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     try:
         tv_show = search_service.search_tv(tv_id)
-
         title = f"{tv_show['title']} - S{season}E{episode}"
 
         record = create_or_get_watch_record(
             session["user_id"],
+            session["active_profile_id"],
             tv_id,
             title,
             tv_show["poster"],
@@ -395,25 +504,25 @@ def player_tv(tv_id, season, episode):
 
 @app.route("/watch/movie/<int:movie_id>")
 def watch_movie(movie_id):
-    if "user_id" not in session:
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     return redirect(url_for("player_movie", movie_id=movie_id))
 
 
 @app.route("/watch/tv/<int:tv_id>/<int:season>/<int:episode>")
 def watch_tv(tv_id, season, episode):
-    if "user_id" not in session:
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     return redirect(url_for("player_tv", tv_id=tv_id, season=season, episode=episode))
 
 
 @app.route("/api/watch-complete", methods=["POST"])
 def save_watch_complete():
-    if "user_id" not in session:
+    if not session.get("user_id") or not session.get("active_profile_id"):
         return jsonify({"ok": False, "error": "unauthorized"}), 401
 
     data = request.get_json(silent=True) or {}
@@ -431,6 +540,7 @@ def save_watch_complete():
 
         mark_watch_completed(
             session["user_id"],
+            session["active_profile_id"],
             tmdb_id,
             content_type=content_type,
             season=season,
@@ -446,12 +556,13 @@ def save_watch_complete():
 @app.route("/api/watch-progress", methods=["POST"])
 def watch_progress():
     try:
-        if "user_id" not in session:
+        if not session.get("user_id") or not session.get("active_profile_id"):
             return jsonify({"success": False, "error": "not logged"}), 401
 
         data = request.get_json(silent=True) or {}
 
         user_id = session["user_id"]
+        profile_id = session["active_profile_id"]
         tmdb_id = int(data.get("tmdb_id"))
         event_name = data.get("event")
         progress_seconds = int(float(data.get("progress_seconds", 0)))
@@ -465,7 +576,6 @@ def watch_progress():
         if episode is not None:
             episode = int(episode)
 
-        # assicura che il record esista sempre
         if content_type == "tv":
             tv_show = search_service.search_tv(tmdb_id)
             title = f"{tv_show['title']} - S{season}E{episode}"
@@ -477,6 +587,7 @@ def watch_progress():
 
         create_or_get_watch_record(
             user_id,
+            profile_id,
             tmdb_id,
             title,
             poster_path,
@@ -487,6 +598,7 @@ def watch_progress():
 
         update_watch_progress(
             user_id,
+            profile_id,
             tmdb_id,
             progress_seconds,
             duration_seconds,
@@ -498,6 +610,7 @@ def watch_progress():
         if event_name == "ended":
             mark_watch_completed(
                 user_id,
+                profile_id,
                 tmdb_id,
                 content_type=content_type,
                 season=season,
@@ -536,12 +649,14 @@ def terms():
 
 @app.route("/")
 def home():
+    if session.get("user_id") and not has_active_profile():
+        return redirect(url_for("profiles"))
+
     featured_items = search_service.get_featured_content()
 
     if not isinstance(featured_items, list):
         featured_items = []
 
-    # ottimizzazione: trailer solo per i primi 2 film in hero
     for index, item in enumerate(featured_items):
         if isinstance(item, dict) and "id" in item:
             item["watch_url"] = build_movie_video_url(item["id"])
@@ -568,9 +683,13 @@ def home():
     popular_tv = search_service.get_popular_tv()
 
     continue_watching = []
-    if "user_id" in session:
+    if "user_id" in session and "active_profile_id" in session:
         try:
-            continue_watching = get_continue_watching(session["user_id"], limit=5)
+            continue_watching = get_continue_watching(
+                session["user_id"],
+                session["active_profile_id"],
+                limit=5
+            )
         except Exception as error:
             print("Errore continue_watching:", error)
             continue_watching = []
@@ -725,19 +844,22 @@ def tv_detail(tv_id):
 
 @app.route("/favorites")
 def favorites():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login per vedere i preferiti.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
-    favorites_list = list_favorites_for_user(session["user_id"])
+    favorites_list = list_favorites_for_user(
+        session["user_id"],
+        profile_id=session["active_profile_id"]
+    )
     return render_template("favorites.html", favorites=favorites_list)
 
 
 @app.route("/favorites/add", methods=["POST"])
 def add_to_favorites():
-    if not session.get("user_id"):
-        flash("Devi effettuare il login per aggiungere preferiti.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
     movie_data = {
         "title": request.form.get("title", ""),
@@ -755,26 +877,60 @@ def add_to_favorites():
         "trailer_video_id": request.form.get("trailer_video_id", "")
     }
 
-    added = add_favorite_for_user(session["user_id"], movie_data)
+    added = add_favorite_for_user(
+        session["user_id"],
+        movie_data,
+        profile_id=session["active_profile_id"]
+    )
 
     if added:
-        flash("Film aggiunto ai tuoi preferiti.")
+        flash("Contenuto aggiunto ai preferiti del profilo.")
     else:
-        flash("Questo film è già nei tuoi preferiti.")
+        flash("Questo contenuto è già nei preferiti del profilo.")
 
     return redirect(url_for("favorites"))
 
 
 @app.route("/favorites/remove/<imdb_id>", methods=["POST"])
 def remove_from_favorites(imdb_id):
-    if not session.get("user_id"):
-        flash("Devi effettuare il login.")
-        return redirect(url_for("login"))
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
 
-    remove_favorite_for_user(session["user_id"], imdb_id)
-    flash("Film rimosso dai tuoi preferiti.")
+    remove_favorite_for_user(
+        session["user_id"],
+        imdb_id,
+        profile_id=session["active_profile_id"]
+    )
+    flash("Contenuto rimosso dai preferiti.")
     return redirect(url_for("favorites"))
 
+@app.route("/films")
+def films():
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
+
+    grouped_movies = search_service.get_movies_grouped_by_genre(
+        max_genres=14,
+        items_per_genre=24
+    )
+
+    return render_template("films.html", grouped_movies=grouped_movies)
+
+
+@app.route("/series")
+def series():
+    redirect_response = profile_required_redirect()
+    if redirect_response:
+        return redirect_response
+
+    grouped_tv = search_service.get_tv_grouped_by_genre(
+        max_genres=14,
+        items_per_genre=24
+    )
+
+    return render_template("series.html", grouped_tv=grouped_tv)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000,)
+    app.run(host="0.0.0.0", port=5000)

@@ -7,11 +7,12 @@ from exceptions import APIError, InvalidResponseError, NotFoundError
 
 class TMDBClient:
     BASE_URL = "https://api.themoviedb.org/3"
-    IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
+    IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w342"
+    HERO_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original"
 
     def __init__(self):
         self._cache = {}
-        self._cache_ttl = 1800  # 10 minuti
+        self._cache_ttl = 1800  # 30 minuti
 
     def _cache_get(self, key):
         cached = self._cache.get(key)
@@ -72,6 +73,11 @@ class TMDBClient:
         if not poster_path:
             return ""
         return f"{self.IMAGE_BASE_URL}{poster_path}"
+
+    def build_hero_backdrop_url(self, backdrop_path):
+        if not backdrop_path:
+            return ""
+        return f"{self.HERO_IMAGE_BASE_URL}{backdrop_path}"
 
     def search_many(self, query):
         data = self._request(
@@ -287,3 +293,85 @@ class TMDBClient:
                 seen_ids.add(item["id"])
 
         return unique_items[:5]
+
+    # =========================
+    # GENERI
+    # =========================
+
+    def get_movie_genres(self):
+        data = self._request(
+            "/genre/movie/list",
+            params={"language": "it-IT"},
+            error_message="Errore nella richiesta generi film TMDb"
+        )
+        return data.get("genres", [])
+
+    def get_tv_genres(self):
+        data = self._request(
+            "/genre/tv/list",
+            params={"language": "it-IT"},
+            error_message="Errore nella richiesta generi serie TV TMDb"
+        )
+        return data.get("genres", [])
+
+    # =========================
+    # DISCOVER PER GENERE
+    # =========================
+
+    def discover_movies_by_genre(self, genre_id, page=1):
+        data = self._request(
+            "/discover/movie",
+            params={
+                "language": "it-IT",
+                "region": "IT",
+                "sort_by": "popularity.desc",
+                "include_adult": "false",
+                "include_video": "false",
+                "with_genres": genre_id,
+                "page": page
+            },
+            error_message="Errore nella richiesta film per genere TMDb"
+        )
+
+        return data.get("results", [])
+
+    def discover_tv_by_genre(self, genre_id, page=1):
+        data = self._request(
+            "/discover/tv",
+            params={
+                "language": "it-IT",
+                "sort_by": "popularity.desc",
+                "include_adult": "false",
+                "with_genres": genre_id,
+                "page": page
+            },
+            error_message="Errore nella richiesta serie TV per genere TMDb"
+        )
+
+        return data.get("results", [])
+
+    def get_movies_for_genre_blocks(self, genre_id, total_items=24):
+        items = []
+        page = 1
+
+        while len(items) < total_items and page <= 3:
+            results = self.discover_movies_by_genre(genre_id, page=page)
+            if not results:
+                break
+            items.extend(results)
+            page += 1
+
+        return items[:total_items]
+
+    def get_tv_for_genre_blocks(self, genre_id, total_items=24):
+        items = []
+        page = 1
+
+        while len(items) < total_items and page <= 3:
+            results = self.discover_tv_by_genre(genre_id, page=page)
+            if not results:
+                break
+            items.extend(results)
+            page += 1
+
+        return items[:total_items]

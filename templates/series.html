@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Serie TV - Movie Explorer{% endblock %}
+
+{% block content %}
+
+<section class="section-card" style="margin-bottom: 28px;">
+    <h1>Catalogo Serie TV</h1>
+    <p>Esplora le serie TV divise per genere.</p>
+</section>
+
+{% for genre in grouped_tv %}
+
+<section class="favorites-header">
+    <div class="section-card">
+        <h2>{{ genre.genre_name }}</h2>
+    </div>
+</section>
+
+<section class="compact-rail-section">
+    <div class="compact-rail">
+        {% for item in genre.row_1 %}
+        <article class="compact-card tv-focusable" tabindex="0">
+            <div class="compact-poster-wrap">
+                {% if item.poster_path %}
+                    <img
+                        src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}"
+                        alt="Poster {{ item.name }}"
+                        class="compact-poster"
+                        loading="lazy"
+                    >
+                {% else %}
+                    <div class="compact-placeholder">
+                        Nessun poster
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="compact-content">
+                <span class="badge small-badge">SERIE TV</span>
+
+                <h3>{{ item.name }}</h3>
+
+                <p class="compact-year">
+                    {{ item.first_air_date[:4] if item.first_air_date else "Anno n.d." }}
+                </p>
+
+                <div class="compact-actions">
+                    <a href="{{ url_for('tv_detail', tv_id=item.id) }}" class="primary-btn compact-btn">
+                        Apri
+                    </a>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="compact-rail-section">
+    <div class="compact-rail">
+        {% for item in genre.row_2 %}
+        <article class="compact-card tv-focusable" tabindex="0">
+            <div class="compact-poster-wrap">
+                {% if item.poster_path %}
+                    <img
+                        src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}"
+                        alt="Poster {{ item.name }}"
+                        class="compact-poster"
+                        loading="lazy"
+                    >
+                {% else %}
+                    <div class="compact-placeholder">
+                        Nessun poster
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="compact-content">
+                <span class="badge small-badge">SERIE TV</span>
+
+                <h3>{{ item.name }}</h3>
+
+                <p class="compact-year">
+                    {{ item.first_air_date[:4] if item.first_air_date else "Anno n.d." }}
+                </p>
+
+                <div class="compact-actions">
+                    <a href="{{ url_for('tv_detail', tv_id=item.id) }}" class="primary-btn compact-btn">
+                        Apri
+                    </a>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% endfor %}
+
+{% endblock %}

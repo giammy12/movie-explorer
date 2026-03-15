@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Seleziona Profilo{% endblock %}
+
+{% block content %}
+
+<section class="profiles-page">
+
+    <h1 class="profiles-title">Chi sta guardando?</h1>
+
+    <div class="profiles-grid">
+
+        {% for profile in profiles %}
+
+        <a
+            href="{{ url_for('select_profile', profile_id=profile.id) }}"
+            class="profile-card tv-focusable"
+            tabindex="0"
+        >
+            <div class="profile-avatar-wrapper">
+                {% if profile.avatar_url %}
+                    <img
+                        src="{{ profile.avatar_url }}"
+                        alt="{{ profile.name }}"
+                        class="profile-avatar"
+                    >
+                {% else %}
+                    <div class="profile-avatar profile-avatar-fallback">
+                        {{ profile.name[0]|upper }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <span class="profile-name">
+                {{ profile.name }}
+            </span>
+        </a>
+
+        {% endfor %}
+
+        <a
+            href="{{ url_for('new_profile') }}"
+            class="profile-card profile-add tv-focusable"
+            tabindex="0"
+        >
+            <div class="profile-avatar-wrapper add-avatar">
+                +
+            </div>
+
+            <span class="profile-name">
+                Aggiungi profilo
+            </span>
+        </a>
+
+    </div>
+
+</section>
+
+{% endblock %}

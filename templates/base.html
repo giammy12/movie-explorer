@@ -13,29 +13,108 @@
     <div class="bg-glow bg-glow-1"></div>
     <div class="bg-glow bg-glow-2"></div>
 
-    <header class="site-header">
-        <div class="container nav-wrapper">
-            <a href="{{ url_for('home') }}" class="logo">🎬 Movie Explorer</a>
+    {% if session.get("user_id") and session.get("active_profile_id") %}
+    <aside class="side-nav" id="sideNav">
+        <div class="side-nav-top">
+            <a href="{{ url_for('profiles') }}" class="side-profile">
+                <div class="side-profile-avatar-wrap">
+                    {% if session.get("active_profile_avatar") %}
+                        <img
+                            src="{{ session.get('active_profile_avatar') }}"
+                            alt="Avatar profilo"
+                            class="side-profile-avatar"
+                        >
+                    {% else %}
+                        <div class="side-profile-avatar side-profile-fallback">
+                            {{ session.get("active_profile_name", "P")[0]|upper }}
+                        </div>
+                    {% endif %}
+                </div>
 
-            <form action="{{ url_for('search') }}" method="post" class="nav-search-form desktop-search-form">
+                <div class="side-nav-label">
+                    {{ session.get("active_profile_name", "Profilo") }}
+                </div>
+            </a>
+
+            <nav class="side-nav-links">
+                <a href="{{ url_for('home') }}" class="side-nav-link tv-focusable" tabindex="0">
+                    <span class="side-nav-icon">
+                        <img src="{{ url_for('static', filename='icons/icon1.png') }}" class="sidebar-icon" alt="Home">
+                    </span>
+                    <span class="side-nav-label">Home</span>
+                </a>
+
+                <a href="{{ url_for('films') }}" class="side-nav-link tv-focusable" tabindex="0">
+                    <span class="side-nav-icon">
+                        <img src="{{ url_for('static', filename='icons/icon2.png') }}" class="sidebar-icon" alt="Film">
+                    </span>
+                    <span class="side-nav-label">Film</span>
+                </a>
+
+                <a href="{{ url_for('series') }}" class="side-nav-link tv-focusable" tabindex="0">
+                    <span class="side-nav-icon">
+                        <img src="{{ url_for('static', filename='icons/icon3.png') }}" class="sidebar-icon" alt="Serie TV">
+                    </span>
+                    <span class="side-nav-label">Serie TV</span>
+                </a>
+
+                <a href="{{ url_for('favorites') }}" class="side-nav-link tv-focusable" tabindex="0">
+                    <span class="side-nav-icon">
+                        <img src="{{ url_for('static', filename='icons/icon4.png') }}" class="sidebar-icon" alt="Preferiti">
+                    </span>
+                    <span class="side-nav-label">Preferiti</span>
+                </a>
+            </nav>
+        </div>
+
+        <div class="side-nav-bottom">
+            <a href="{{ url_for('account') }}" class="side-nav-link tv-focusable" tabindex="0">
+                <span class="side-nav-icon">
+                    <img src="{{ url_for('static', filename='icons/icon5.png') }}" class="sidebar-icon" alt="Account">
+                </span>
+                <span class="side-nav-label">Account</span>
+            </a>
+
+            <a href="{{ url_for('logout') }}" class="side-nav-link tv-focusable" tabindex="0">
+                <span class="side-nav-icon">
+                    <img src="{{ url_for('static', filename='icons/icon6.png') }}" class="sidebar-icon" alt="Logout">
+                </span>
+                <span class="side-nav-label">Logout</span>
+            </a>
+        </div>
+    </aside>
+    {% endif %}
+
+    <header class="site-header top-header-clean">
+        <div class="container topbar-wrapper {% if session.get('user_id') and session.get('active_profile_id') %}with-sidebar{% endif %}">
+            <div class="topbar-left">
+                <a href="{{ url_for('home') }}" class="logo">🎬 Movie Explorer</a>
+                <a href="{{ url_for('home') }}" class="top-home-link">Home</a>
+            </div>
+
+            <form action="{{ url_for('search') }}" method="post" class="nav-search-form topbar-search desktop-search-visible">
                 <input type="text" name="title" placeholder="Cerca film o serie TV..." required>
                 <button type="submit">Cerca</button>
             </form>
 
-            <nav class="nav desktop-nav">
-                <a href="{{ url_for('home') }}">Home</a>
-                <a href="{{ url_for('favorites') }}">Preferiti</a>
-
+            <div class="topbar-right desktop-auth-visible">
                 {% if session.get("user_id") %}
-                    <a href="{{ url_for('account') }}" class="nav-avatar" title="Account">
-                        {{ session.get("first_name", "U")[0]|upper }}
+                    <a href="{{ url_for('account') }}" class="nav-avatar account-avatar-link" title="Account">
+                        {% if session.get("active_profile_avatar") %}
+                            <img
+                                src="{{ session.get('active_profile_avatar') }}"
+                                alt="Avatar profilo"
+                                class="nav-avatar-image"
+                            >
+                        {% else %}
+                            {{ session.get("first_name", "U")[0]|upper }}
+                        {% endif %}
                     </a>
-                    <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
-                    <a href="{{ url_for('login') }}">Login</a>
-                    <a href="{{ url_for('register') }}">Registrati</a>
+                    <a href="{{ url_for('login') }}" class="secondary-btn">Login</a>
+                    <a href="{{ url_for('register') }}" class="primary-btn">Registrati</a>
                 {% endif %}
-            </nav>
+            </div>
 
             <div class="mobile-nav">
                 <a href="{{ url_for('home') }}" class="mobile-home-link">Home</a>
@@ -50,7 +129,7 @@
             </div>
         </div>
 
-        <div class="container">
+        <div class="container mobile-only-nav">
             <div class="mobile-search-panel">
                 <form action="{{ url_for('search') }}" method="post" class="nav-search-form mobile-search-form">
                     <input type="text" name="title" placeholder="Cerca film o serie TV..." required>
@@ -59,9 +138,30 @@
             </div>
 
             <div class="mobile-dropdown-menu">
-                <a href="{{ url_for('favorites') }}">Preferiti</a>
-
                 {% if session.get("user_id") %}
+                    <div class="mobile-profile-preview">
+                        {% if session.get("active_profile_avatar") %}
+                            <img
+                                src="{{ session.get('active_profile_avatar') }}"
+                                alt="Avatar profilo attivo"
+                                class="mobile-profile-avatar"
+                            >
+                        {% else %}
+                            <div class="mobile-profile-avatar mobile-profile-fallback">
+                                {{ session.get("first_name", "U")[0]|upper }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mobile-profile-meta">
+                            <strong>{{ session.get("active_profile_name", "Profilo") }}</strong>
+                            <span>Account {{ session.get("username", "") }}</span>
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for('profiles') }}">Profili</a>
+                    <a href="{{ url_for('films') }}">Film</a>
+                    <a href="{{ url_for('series') }}">Serie TV</a>
+                    <a href="{{ url_for('favorites') }}">Preferiti</a>
                     <a href="{{ url_for('account') }}">Account</a>
                     <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
@@ -72,7 +172,7 @@
         </div>
     </header>
 
-    <main class="page-content">
+    <main class="page-content {% if session.get('user_id') and session.get('active_profile_id') %}page-with-sidebar{% endif %}">
         <div class="container">
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -88,7 +188,7 @@
         </div>
     </main>
 
-    <footer class="site-footer">
+    <footer class="site-footer {% if session.get('user_id') and session.get('active_profile_id') %}page-with-sidebar{% endif %}">
         <div class="container footer-content">
             <div>
                 <a href="{{ url_for('home') }}" class="logo">🎬 Movie Explorer</a>
@@ -174,7 +274,9 @@
         }
 
         document.addEventListener("keydown", function (e) {
-            if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+            if (document.activeElement && ["INPUT", "TEXTAREA"].includes(document.activeElement.tagName)) {
+                return;
+            }
 
             if (e.key === "ArrowRight") {
                 e.preventDefault();

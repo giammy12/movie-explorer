@@ -104,3 +104,137 @@ class SearchService:
 
     def get_featured_content(self):
         return self.tmdb_client.get_featured_content()
+
+    # =========================
+    # GENERI FILM / SERIE
+    # =========================
+
+    def get_movie_genres(self):
+        cache_key = "tmdb_movie_genres"
+        cached = get_from_cache(cache_key)
+
+        if cached:
+            return cached
+
+        genres = self.tmdb_client.get_movie_genres()
+        add_to_cache(cache_key, genres)
+        return genres
+
+    def get_tv_genres(self):
+        cache_key = "tmdb_tv_genres"
+        cached = get_from_cache(cache_key)
+
+        if cached:
+            return cached
+
+        genres = self.tmdb_client.get_tv_genres()
+        add_to_cache(cache_key, genres)
+        return genres
+
+    # =========================
+    # CATALOGO FILM PER GENERE
+    # =========================
+
+    def get_movies_grouped_by_genre(self, max_genres=6, items_per_genre=24):
+        cache_key = f"catalog_movies_grouped_{max_genres}_{items_per_genre}"
+        cached = get_from_cache(cache_key)
+
+        if cached:
+            return cached
+
+        genres = self.get_movie_genres()
+        grouped = []
+
+        for genre in genres[:max_genres]:
+            genre_id = genre.get("id")
+            genre_name = genre.get("name", "Genere")
+
+            items = self.tmdb_client.get_movies_for_genre_blocks(
+                genre_id,
+                total_items=items_per_genre
+            )
+
+            normalized_items = []
+            seen_ids = set()
+
+            for item in items:
+                item_id = item.get("id")
+                if not item_id or item_id in seen_ids:
+                    continue
+
+                seen_ids.add(item_id)
+
+                normalized_items.append({
+                    "id": item_id,
+                    "title": item.get("title", ""),
+                    "poster_path": item.get("poster_path"),
+                    "backdrop_path": item.get("backdrop_path"),
+                    "overview": item.get("overview", ""),
+                    "release_date": item.get("release_date", ""),
+                    "vote_average": item.get("vote_average", 0),
+                    "media_type": "movie"
+                })
+
+            grouped.append({
+                "genre_id": genre_id,
+                "genre_name": genre_name,
+                "row_1": normalized_items[:12],
+                "row_2": normalized_items[12:24]
+            })
+
+        add_to_cache(cache_key, grouped)
+        return grouped
+
+    # =========================
+    # CATALOGO SERIE TV PER GENERE
+    # =========================
+
+    def get_tv_grouped_by_genre(self, max_genres=6, items_per_genre=24):
+        cache_key = f"catalog_tv_grouped_{max_genres}_{items_per_genre}"
+        cached = get_from_cache(cache_key)
+
+        if cached:
+            return cached
+
+        genres = self.get_tv_genres()
+        grouped = []
+
+        for genre in genres[:max_genres]:
+            genre_id = genre.get("id")
+            genre_name = genre.get("name", "Genere")
+
+            items = self.tmdb_client.get_tv_for_genre_blocks(
+                genre_id,
+                total_items=items_per_genre
+            )
+
+            normalized_items = []
+            seen_ids = set()
+
+            for item in items:
+                item_id = item.get("id")
+                if not item_id or item_id in seen_ids:
+                    continue
+
+                seen_ids.add(item_id)
+
+                normalized_items.append({
+                    "id": item_id,
+                    "name": item.get("name", ""),
+                    "poster_path": item.get("poster_path"),
+                    "backdrop_path": item.get("backdrop_path"),
+                    "overview": item.get("overview", ""),
+                    "first_air_date": item.get("first_air_date", ""),
+                    "vote_average": item.get("vote_average", 0),
+                    "media_type": "tv"
+                })
+
+            grouped.append({
+                "genre_id": genre_id,
+                "genre_name": genre_name,
+                "row_1": normalized_items[:12],
+                "row_2": normalized_items[12:24]
+            })
+
+        add_to_cache(cache_key, grouped)
+        return grouped

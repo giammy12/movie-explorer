@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Nuovo Profilo{% endblock %}
+
+{% block content %}
+
+<section class="profiles-page new-profile-page">
+
+    <div class="new-profile-card">
+        <h1 class="profiles-title">Crea un nuovo profilo</h1>
+        <p class="profiles-subtitle">Scegli un nome e un avatar per il profilo.</p>
+
+        <form action="{{ url_for('new_profile') }}" method="post" class="new-profile-form">
+            <div class="form-group">
+                <label for="name">Nome profilo</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    placeholder="Es. Gian, Ospite, Kids"
+                    maxlength="20"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Scegli un avatar</label>
+
+                <div class="avatar-picker">
+                    {% for avatar in available_avatars %}
+                        <label class="avatar-option tv-focusable" tabindex="0">
+                            <input
+                                type="radio"
+                                name="avatar_url"
+                                value="{{ avatar }}"
+                                {% if loop.first %}checked{% endif %}
+                            >
+                            <img src="{{ avatar }}" alt="Avatar {{ loop.index }}" class="avatar-choice-image">
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="new-profile-actions">
+                <a href="{{ url_for('profiles') }}" class="secondary-btn">Annulla</a>
+                <button type="submit" class="primary-btn">Crea profilo</button>
+            </div>
+        </form>
+    </div>
+
+</section>
+
+{% endblock %}

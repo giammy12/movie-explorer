@@ -18,6 +18,7 @@ def init_db():
     connection = get_connection()
     cursor = connection.cursor()
 
+    # USERS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,6 +33,24 @@ def init_db():
         )
     """)
 
+    # USER PROFILES (NUOVO)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            avatar_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_profiles_user
+        ON user_profiles(user_id)
+    """)
+
+    # FAVORITES
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS favorites (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,6 +73,7 @@ def init_db():
         )
     """)
 
+    # RECENT SEARCHES
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS recent_searches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,6 +84,7 @@ def init_db():
         )
     """)
 
+    # ACCOUNT OTPS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS account_otps (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +97,7 @@ def init_db():
         )
     """)
 
+    # PASSWORD RESET TOKENS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,10 +109,12 @@ def init_db():
         )
     """)
 
+    # WATCH HISTORY (MODIFICATO PER PROFILI)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS watch_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
+            profile_id INTEGER,
             tmdb_id INTEGER NOT NULL,
             content_type TEXT NOT NULL DEFAULT 'movie',
             title TEXT NOT NULL,
@@ -102,13 +126,19 @@ def init_db():
             completed INTEGER DEFAULT 0,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (profile_id) REFERENCES user_profiles(id)
         )
     """)
 
     cursor.execute("""
         CREATE INDEX IF NOT EXISTS idx_watch_history_user_updated
         ON watch_history(user_id, updated_at DESC)
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_watch_history_profile
+        ON watch_history(profile_id)
     """)
 
     connection.commit()

@@ -1,7 +1,7 @@
 from database import get_connection
 
 
-def get_watch_record(user_id, tmdb_id, content_type="movie", season=None, episode=None):
+def get_watch_record(user_id, profile_id, tmdb_id, content_type="movie", season=None, episode=None):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -10,37 +10,39 @@ def get_watch_record(user_id, tmdb_id, content_type="movie", season=None, episod
             SELECT *
             FROM watch_history
             WHERE user_id = ?
+              AND profile_id = ?
               AND tmdb_id = ?
               AND content_type = ?
               AND season = ?
               AND episode = ?
             LIMIT 1
-        """, (user_id, tmdb_id, content_type, season, episode))
+        """, (user_id, profile_id, tmdb_id, content_type, season, episode))
     else:
         cursor.execute("""
             SELECT *
             FROM watch_history
             WHERE user_id = ?
+              AND profile_id = ?
               AND tmdb_id = ?
               AND content_type = ?
             LIMIT 1
-        """, (user_id, tmdb_id, content_type))
+        """, (user_id, profile_id, tmdb_id, content_type))
 
     row = cursor.fetchone()
     conn.close()
     return row
 
 
-def prune_continue_watching(user_id, limit=5):
+def prune_continue_watching(user_id, profile_id, limit=5):
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT id
         FROM watch_history
-        WHERE user_id = ? AND completed = 0
+        WHERE user_id = ? AND profile_id = ? AND completed = 0
         ORDER BY updated_at DESC
-    """, (user_id,))
+    """, (user_id, profile_id))
 
     rows = cursor.fetchall()
 
@@ -59,6 +61,7 @@ def prune_continue_watching(user_id, limit=5):
 
 def create_or_get_watch_record(
     user_id,
+    profile_id,
     tmdb_id,
     title,
     poster_path,
@@ -68,6 +71,7 @@ def create_or_get_watch_record(
 ):
     existing = get_watch_record(
         user_id,
+        profile_id,
         tmdb_id,
         content_type=content_type,
         season=season,
@@ -83,27 +87,30 @@ def create_or_get_watch_record(
                 UPDATE watch_history
                 SET updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
+                  AND profile_id = ?
                   AND tmdb_id = ?
                   AND content_type = ?
                   AND season = ?
                   AND episode = ?
-            """, (user_id, tmdb_id, content_type, season, episode))
+            """, (user_id, profile_id, tmdb_id, content_type, season, episode))
         else:
             cursor.execute("""
                 UPDATE watch_history
                 SET updated_at = CURRENT_TIMESTAMP
                 WHERE user_id = ?
+                  AND profile_id = ?
                   AND tmdb_id = ?
                   AND content_type = ?
-            """, (user_id, tmdb_id, content_type))
+            """, (user_id, profile_id, tmdb_id, content_type))
 
         conn.commit()
         conn.close()
 
-        prune_continue_watching(user_id, limit=5)
+        prune_continue_watching(user_id, profile_id, limit=5)
 
         return get_watch_record(
             user_id,
+            profile_id,
             tmdb_id,
             content_type=content_type,
             season=season,
@@ -116,6 +123,7 @@ def create_or_get_watch_record(
     cursor.execute("""
         INSERT INTO watch_history (
             user_id,
+            profile_id,
             tmdb_id,
             content_type,
             title,
@@ -126,9 +134,10 @@ def create_or_get_watch_record(
             duration_seconds,
             completed
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, 0)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0)
     """, (
         user_id,
+        profile_id,
         tmdb_id,
         content_type,
         title,
@@ -140,10 +149,11 @@ def create_or_get_watch_record(
     conn.commit()
     conn.close()
 
-    prune_continue_watching(user_id, limit=5)
+    prune_continue_watching(user_id, profile_id, limit=5)
 
     return get_watch_record(
         user_id,
+        profile_id,
         tmdb_id,
         content_type=content_type,
         season=season,
@@ -153,6 +163,7 @@ def create_or_get_watch_record(
 
 def update_watch_progress(
     user_id,
+    profile_id,
     tmdb_id,
     progress_seconds,
     duration_seconds,
@@ -177,6 +188,7 @@ def update_watch_progress(
                 completed = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ?
+              AND profile_id = ?
               AND tmdb_id = ?
               AND content_type = ?
               AND season = ?
@@ -186,6 +198,7 @@ def update_watch_progress(
             duration_seconds,
             completed,
             user_id,
+            profile_id,
             tmdb_id,
             content_type,
             season,
@@ -199,6 +212,7 @@ def update_watch_progress(
                 completed = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ?
+              AND profile_id = ?
               AND tmdb_id = ?
               AND content_type = ?
         """, (
@@ -206,6 +220,7 @@ def update_watch_progress(
             duration_seconds,
             completed,
             user_id,
+            profile_id,
             tmdb_id,
             content_type
         ))
@@ -213,10 +228,10 @@ def update_watch_progress(
     conn.commit()
     conn.close()
 
-    prune_continue_watching(user_id, limit=5)
+    prune_continue_watching(user_id, profile_id, limit=5)
 
 
-def mark_watch_completed(user_id, tmdb_id, content_type="movie", season=None, episode=None):
+def mark_watch_completed(user_id, profile_id, tmdb_id, content_type="movie", season=None, episode=None):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -226,26 +241,28 @@ def mark_watch_completed(user_id, tmdb_id, content_type="movie", season=None, ep
             SET completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ?
+              AND profile_id = ?
               AND tmdb_id = ?
               AND content_type = ?
               AND season = ?
               AND episode = ?
-        """, (user_id, tmdb_id, content_type, season, episode))
+        """, (user_id, profile_id, tmdb_id, content_type, season, episode))
     else:
         cursor.execute("""
             UPDATE watch_history
             SET completed = 1,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = ?
+              AND profile_id = ?
               AND tmdb_id = ?
               AND content_type = ?
-        """, (user_id, tmdb_id, content_type))
+        """, (user_id, profile_id, tmdb_id, content_type))
 
     conn.commit()
     conn.close()
 
 
-def get_continue_watching(user_id, limit=5):
+def get_continue_watching(user_id, profile_id, limit=5):
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -261,10 +278,10 @@ def get_continue_watching(user_id, limit=5):
             duration_seconds,
             completed
         FROM watch_history
-        WHERE user_id = ? AND completed = 0
+        WHERE user_id = ? AND profile_id = ? AND completed = 0
         ORDER BY updated_at DESC
         LIMIT ?
-    """, (user_id, limit))
+    """, (user_id, profile_id, limit))
 
     rows = cursor.fetchall()
     conn.close()
