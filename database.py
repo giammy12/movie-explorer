@@ -141,5 +141,24 @@ def init_db():
         ON watch_history(profile_id)
     """)
 
+    # API TOKENS
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            access_token TEXT NOT NULL UNIQUE,
+            refresh_token TEXT NOT NULL UNIQUE,
+            access_expires_at TEXT NOT NULL,
+            refresh_expires_at TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_api_tokens_user
+        ON api_tokens(user_id)
+    """)
+
     connection.commit()
     connection.close()
