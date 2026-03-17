@@ -1301,11 +1301,15 @@ def api_movie_detail(movie_id):
                 "success": False,
                 "error": "Movie not found"
             }), 404
+
         return jsonify(detail)
+
     except Exception as e:
+        import traceback
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "trace": traceback.format_exc()
         }), 500
 
 
@@ -1318,11 +1322,15 @@ def api_tv_detail(tv_id):
                 "success": False,
                 "error": "TV show not found"
             }), 404
+
         return jsonify(detail)
+
     except Exception as e:
+        import traceback
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "trace": traceback.format_exc()
         }), 500
 
 @app.route("/api/tv/favorites", methods=["GET"])
