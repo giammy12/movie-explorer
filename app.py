@@ -1348,6 +1348,53 @@ def api_tv_series():
     })
 
 
+@app.route("/api/movie/<int:movie_id>", methods=["GET"])
+def api_movie_detail(movie_id):
+    user, profile, error_response = api_token_and_profile_required()
+    if error_response:
+        return error_response
+
+    try:
+        detail = search_service.get_movie_detail(movie_id)
+
+        if not detail:
+            return jsonify({
+                "success": False,
+                "error": "Movie not found"
+            }), 404
+
+        return jsonify(detail)
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@app.route("/api/tv/<int:tv_id>", methods=["GET"])
+def api_tv_detail(tv_id):
+    user, profile, error_response = api_token_and_profile_required()
+    if error_response:
+        return error_response
+
+    try:
+        detail = search_service.get_tv_detail(tv_id)
+
+        if not detail:
+            return jsonify({
+                "success": False,
+                "error": "TV show not found"
+            }), 404
+
+        return jsonify(detail)
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 @app.route("/api/tv/favorites", methods=["GET"])
 def api_tv_favorites():
     user, profile, error_response = api_token_and_profile_required()

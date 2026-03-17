@@ -375,3 +375,33 @@ class TMDBClient:
             page += 1
 
         return items[:total_items]
+    
+
+def get_movie_detail(self, movie_id: int):
+    url = f"{self.base_url}/movie/{movie_id}"
+    params = {
+        "api_key": self.api_key,
+        "language": "it-IT",
+        "append_to_response": "credits,videos,watch/providers"
+    }
+
+    response = requests.get(url, params=params, timeout=15)
+    if response.status_code != 200:
+        return None
+
+    return response.json()
+
+
+def get_tv_detail(self, tv_id: int):
+    url = f"{self.base_url}/tv/{tv_id}"
+    params = {
+        "api_key": self.api_key,
+        "language": "it-IT",
+        "append_to_response": "credits,videos,watch/providers"
+    }
+
+    response = requests.get(url, params=params, timeout=15)
+    if response.status_code != 200:
+        return None
+
+    return response.json()

@@ -238,3 +238,106 @@ class SearchService:
 
         add_to_cache(cache_key, grouped)
         return grouped
+    
+
+    def get_movie_detail(self, movie_id: int):
+        data = self.tmdb.get_movie_detail(movie_id)
+        if not data:
+            return None
+        return self._serialize_movie_detail(data)
+
+
+    def get_tv_detail(self, tv_id: int):
+        data = self.tmdb.get_tv_detail(tv_id)
+        if not data:
+            return None
+        return self._serialize_tv_detail(data)
+    
+    def _serialize_movie_detail(self, data: dict):
+        return {
+            "id": data.get("id"),
+            "title": data.get("title", ""),
+            "overview": data.get("overview", ""),
+            "poster_path": data.get("poster_path"),
+            "backdrop_path": data.get("backdrop_path"),
+            "vote_average": data.get("vote_average", 0.0),
+            "runtime": data.get("runtime"),
+            "release_date": data.get("release_date"),
+            "genres": data.get("genres", []),
+            "credits": {
+                "cast": [
+                    {
+                        "id": c.get("id"),
+                        "name": c.get("name", ""),
+                        "character": c.get("character"),
+                        "profile_path": c.get("profile_path")
+                    }
+                    for c in data.get("credits", {}).get("cast", [])[:10]
+                ]
+            },
+            "videos": {
+                "results": [
+                    {
+                        "key": v.get("key"),
+                        "name": v.get("name", ""),
+                        "site": v.get("site", ""),
+                        "type": v.get("type", "")
+                    }
+                    for v in data.get("videos", {}).get("results", [])
+                ]
+            },
+            "watchProviders": {
+                "results": data.get("watch/providers", {}).get("results", {})
+            }
+        }
+    
+
+    def _serialize_tv_detail(self, data: dict):
+        return {
+            "id": data.get("id"),
+            "name": data.get("name", ""),
+            "overview": data.get("overview", ""),
+            "poster_path": data.get("poster_path"),
+            "backdrop_path": data.get("backdrop_path"),
+            "vote_average": data.get("vote_average", 0.0),
+            "episode_run_time": data.get("episode_run_time", []),
+            "first_air_date": data.get("first_air_date"),
+            "genres": data.get("genres", []),
+            "number_of_seasons": data.get("number_of_seasons", 0),
+            "number_of_episodes": data.get("number_of_episodes", 0),
+            "seasons": [
+                {
+                    "id": s.get("id"),
+                    "season_number": s.get("season_number"),
+                    "name": s.get("name", ""),
+                    "episode_count": s.get("episode_count", 0),
+                    "poster_path": s.get("poster_path")
+                }
+                for s in data.get("seasons", [])
+            ],
+            "credits": {
+                "cast": [
+                    {
+                        "id": c.get("id"),
+                        "name": c.get("name", ""),
+                        "character": c.get("character"),
+                        "profile_path": c.get("profile_path")
+                    }
+                    for c in data.get("credits", {}).get("cast", [])[:10]
+                ]
+            },
+            "videos": {
+                "results": [
+                    {
+                        "key": v.get("key"),
+                        "name": v.get("name", ""),
+                        "site": v.get("site", ""),
+                        "type": v.get("type", "")
+                    }
+                    for v in data.get("videos", {}).get("results", [])
+                ]
+            },
+            "watchProviders": {
+                "results": data.get("watch/providers", {}).get("results", {})
+            }
+        }
