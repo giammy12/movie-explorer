@@ -103,21 +103,14 @@ def api_token_required_user():
 
 
 def get_profile_id_from_request():
-    profile_id = request.headers.get("X-Profile-Id", "").strip()
-
-    if not profile_id:
-        profile_id = str(request.args.get("profile_id", "")).strip()
-
-    if not profile_id and request.is_json:
-        data = request.get_json(silent=True) or {}
-        profile_id = str(data.get("profile_id", "")).strip()
+    profile_id = request.headers.get("X-Profile-Id") or request.args.get("profile_id")
 
     if not profile_id:
         return None
 
     try:
         return int(profile_id)
-    except (TypeError, ValueError):
+    except ValueError:
         return None
 
 
