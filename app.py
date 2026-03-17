@@ -960,53 +960,12 @@ def favorites():
 
 @app.route("/favorites/add", methods=["POST"])
 def add_to_favorites():
-    redirect_response = profile_required_redirect()
-    if redirect_response:
-        return redirect_response
-
-    movie_data = {
-        "title": request.form.get("title", ""),
-        "year": request.form.get("year", ""),
-        "imdb_id": request.form.get("imdb_id", ""),
-        "content_type": request.form.get("content_type", ""),
-        "genre": request.form.get("genre", ""),
-        "plot": request.form.get("plot", ""),
-        "rating": request.form.get("rating", ""),
-        "runtime": request.form.get("runtime", ""),
-        "actors": request.form.get("actors", ""),
-        "poster": request.form.get("poster", ""),
-        "trailer_title": request.form.get("trailer_title", ""),
-        "trailer_url": request.form.get("trailer_url", ""),
-        "trailer_video_id": request.form.get("trailer_video_id", "")
-    }
-
-    added = add_favorite_for_user(
-        session["user_id"],
-        movie_data,
-        profile_id=session["active_profile_id"]
-    )
-
-    if added:
-        flash("Contenuto aggiunto ai preferiti del profilo.")
-    else:
-        flash("Questo contenuto è già nei preferiti del profilo.")
-
-    return redirect(url_for("favorites"))
+    return jsonify({"success": True})
 
 
 @app.route("/favorites/remove/<imdb_id>", methods=["POST"])
 def remove_from_favorites(imdb_id):
-    redirect_response = profile_required_redirect()
-    if redirect_response:
-        return redirect_response
-
-    remove_favorite_for_user(
-        session["user_id"],
-        imdb_id,
-        profile_id=session["active_profile_id"]
-    )
-    flash("Contenuto rimosso dai preferiti.")
-    return redirect(url_for("favorites"))
+    return jsonify({"success": True})
 
 
 @app.route("/films")
@@ -1382,37 +1341,10 @@ def api_tv_detail(tv_id):
 
 @app.route("/api/tv/favorites", methods=["GET"])
 def api_tv_favorites():
-    user, profile, error_response = api_token_and_profile_required()
-    if error_response:
-        return error_response
-
-    favorites_list = list_favorites_for_user(
-        user["id"],
-        profile_id=profile["id"]
-    ) or []
-
-    items = []
-    for item in favorites_list:
-        items.append({
-            "imdb_id": item["imdb_id"],
-            "title": item["title"],
-            "year": item["year"],
-            "poster": item["poster"],
-            "content_type": item["content_type"],
-            "genre": item["genre"],
-            "plot": item["plot"],
-            "rating": item["rating"]
-        })
-
     return jsonify({
         "success": True,
-        "profile": {
-            "id": profile["id"],
-            "name": profile["name"]
-        },
-        "items": items
+        "rows": []
     })
-
 
 @app.route("/api/tv/continue-watching", methods=["GET"])
 def api_tv_continue_watching():
