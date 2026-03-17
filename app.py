@@ -130,6 +130,18 @@ def api_token_and_profile_required():
     return user, profile, None
 
 
+def establish_web_session(user, profile):
+    session["user_id"] = user["id"]
+    session["username"] = user.get("username")
+    session["first_name"] = user.get("first_name")
+    session["last_name"] = user.get("last_name")
+    session["email"] = user.get("email")
+
+    session["active_profile_id"] = profile["id"]
+    session["active_profile_name"] = profile["name"]
+    session["active_profile_avatar"] = profile["avatar_url"]
+
+
 def _serialize_media_card(item, media_type="movie"):
     if not item:
         return None
@@ -534,6 +546,52 @@ def verify_delete_otp():
         return redirect(url_for("home"))
 
     return render_template("verify_delete_otp.html")
+
+
+@app.route("/webview/player/movie/<int:movie_id>")
+def webview_player_movie(movie_id):
+    access_token = str(request.args.get("access_token", "")).strip()
+    profile_id = request.args.get("profile_id", type=int)
+
+    if not access_token or not profile_id:
+        flash("Sessione player non valida.")
+        return redirect(url_for("login"))
+
+    user = get_user_by_access_token(access_token)
+    if not user:
+        flash("Token non valido.")
+        return redirect(url_for("login"))
+
+    profile = get_profile_by_id_for_user(profile_id, user["id"])
+    if not profile:
+        flash("Profilo non valido.")
+        return redirect(url_for("profiles"))
+
+    establish_web_session(user, profile)
+    return redirect(url_for("player_movie", movie_id=movie_id))
+
+
+@app.route("/webview/player/tv/<int:tv_id>/<int:season>/<int:episode>")
+def webview_player_tv(tv_id, season, episode):
+    access_token = str(request.args.get("access_token", "")).strip()
+    profile_id = request.args.get("profile_id", type=int)
+
+    if not access_token or not profile_id:
+        flash("Sessione player non valida.")
+        return redirect(url_for("login"))
+
+    user = get_user_by_access_token(access_token)
+    if not user:
+        flash("Token non valido.")
+        return redirect(url_for("login"))
+
+    profile = get_profile_by_id_for_user(profile_id, user["id"])
+    if not profile:
+        flash("Profilo non valido.")
+        return redirect(url_for("profiles"))
+
+    establish_web_session(user, profile)
+    return redirect(url_for("player_tv", tv_id=tv_id, season=season, episode=episode))
 
 
 @app.route("/player/movie/<int:movie_id>")
@@ -1094,16 +1152,21 @@ def api_player_movie(movie_id):
     if error_response:
         return error_response
 
-    start_at = request.args.get("start_at", default=0, type=int)
-    player_url = build_movie_video_url(movie_id, start_at=start_at)
+    access_token = get_bearer_token_from_request()
+
+    player_url = url_for(
+        "webview_player_movie",
+        movie_id=movie_id,
+        access_token=access_token,
+        profile_id=profile["id"],
+        _external=True
+    )
 
     return jsonify({
         "success": True,
         "media_type": "movie",
         "media_id": movie_id,
-        "start_at": start_at,
-        "player_url": player_url,
-        "provider_origin": get_provider_origin()
+        "player_url": player_url
     })
 
 
@@ -1113,8 +1176,17 @@ def api_player_tv(tv_id, season, episode):
     if error_response:
         return error_response
 
-    start_at = request.args.get("start_at", default=0, type=int)
-    player_url = build_tv_video_url(tv_id, season, episode, start_at=start_at)
+    access_token = get_bearer_token_from_request()
+
+    player_url = url_for(
+        "webview_player_tv",
+        tv_id=tv_id,
+        season=season,
+        episode=episode,
+        access_token=access_token,
+        profile_id=profile["id"],
+        _external=True
+    )
 
     return jsonify({
         "success": True,
@@ -1122,9 +1194,7 @@ def api_player_tv(tv_id, season, episode):
         "media_id": tv_id,
         "season": season,
         "episode": episode,
-        "start_at": start_at,
-        "player_url": player_url,
-        "provider_origin": get_provider_origin()
+        "player_url": player_url
     })
 
 
