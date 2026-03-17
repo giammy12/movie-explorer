@@ -1333,6 +1333,25 @@ def api_tv_detail(tv_id):
             "trace": traceback.format_exc()
         }), 500
 
+@app.route("/api/tv/<int:tv_id>/season/<int:season_number>", methods=["GET"])
+def api_tv_season_detail(tv_id, season_number):
+    try:
+        detail = search_service.get_tv_season_detail(tv_id, season_number)
+        if not detail:
+            return jsonify({
+                "success": False,
+                "error": "Season not found"
+            }), 404
+
+        return jsonify(detail)
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "trace": traceback.format_exc()
+        }), 500
+
 @app.route("/api/tv/favorites", methods=["GET"])
 def api_tv_favorites():
     return jsonify({

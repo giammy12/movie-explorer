@@ -253,6 +253,14 @@ class SearchService:
             return None
         return self._serialize_tv_detail(data)
     
+
+    def get_tv_season_detail(self, tv_id: int, season_number: int):
+        data = self.tmdb_client.get_tv_season_details(tv_id, season_number)
+        if not data:
+            return None
+        return data
+
+
     def _serialize_movie_detail(self, data: dict):
         return {
             "id": data.get("id"),
