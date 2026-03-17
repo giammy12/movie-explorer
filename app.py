@@ -132,10 +132,10 @@ def api_token_and_profile_required():
 
 def establish_web_session(user, profile):
     session["user_id"] = user["id"]
-    session["username"] = user.get("username")
-    session["first_name"] = user.get("first_name")
-    session["last_name"] = user.get("last_name")
-    session["email"] = user.get("email")
+    session["username"] = user["username"]
+    session["first_name"] = user["first_name"]
+    session["last_name"] = user["last_name"]
+    session["email"] = user["email"]
 
     session["active_profile_id"] = profile["id"]
     session["active_profile_name"] = profile["name"]
