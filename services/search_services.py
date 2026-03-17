@@ -240,14 +240,14 @@ class SearchService:
         return grouped
     
 
-    def get_movie_detail(self, movie_id: int):
+    def get_movie_details(self, movie_id: int):
         data = self.tmdb_client.get_movie_detail(movie_id)
         if not data:
             return None
         return data
 
 
-    def get_tv_detail(self, tv_id: int):
+    def get_tv_details(self, tv_id: int):
         data = self.tmdb_client.get_tv_detail(tv_id)
         if not data:
             return None
