@@ -1088,6 +1088,46 @@ def api_tv_profiles():
     })
 
 
+@app.route("/api/player/movie/<int:movie_id>", methods=["GET"])
+def api_player_movie(movie_id):
+    user, profile, error_response = api_token_and_profile_required()
+    if error_response:
+        return error_response
+
+    start_at = request.args.get("start_at", default=0, type=int)
+    player_url = build_movie_video_url(movie_id, start_at=start_at)
+
+    return jsonify({
+        "success": True,
+        "media_type": "movie",
+        "media_id": movie_id,
+        "start_at": start_at,
+        "player_url": player_url,
+        "provider_origin": get_provider_origin()
+    })
+
+
+@app.route("/api/player/tv/<int:tv_id>/<int:season>/<int:episode>", methods=["GET"])
+def api_player_tv(tv_id, season, episode):
+    user, profile, error_response = api_token_and_profile_required()
+    if error_response:
+        return error_response
+
+    start_at = request.args.get("start_at", default=0, type=int)
+    player_url = build_tv_video_url(tv_id, season, episode, start_at=start_at)
+
+    return jsonify({
+        "success": True,
+        "media_type": "tv",
+        "media_id": tv_id,
+        "season": season,
+        "episode": episode,
+        "start_at": start_at,
+        "player_url": player_url,
+        "provider_origin": get_provider_origin()
+    })
+
+
 @app.route("/api/tv/profiles/select", methods=["POST"])
 def api_tv_select_profile():
     user, error_response = api_token_required_user()
