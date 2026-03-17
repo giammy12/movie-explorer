@@ -244,14 +244,14 @@ class SearchService:
         data = self.tmdb_client.get_movie_detail(movie_id)
         if not data:
             return None
-        return self._serialize_movie_detail(data)
+        return data
 
 
     def get_tv_detail(self, tv_id: int):
         data = self.tmdb_client.get_tv_detail(tv_id)
         if not data:
             return None
-        return self._serialize_tv_detail(data)
+        return data
     
     def _serialize_movie_detail(self, data: dict):
         return {
