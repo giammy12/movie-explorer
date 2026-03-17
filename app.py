@@ -955,15 +955,7 @@ def tv_detail(tv_id):
 
 @app.route("/favorites")
 def favorites():
-    redirect_response = profile_required_redirect()
-    if redirect_response:
-        return redirect_response
-
-    favorites_list = list_favorites_for_user(
-        session["user_id"],
-        profile_id=session["active_profile_id"]
-    )
-    return render_template("favorites.html", favorites=favorites_list)
+    return render_template("favorites.html", favorites=[])
 
 
 @app.route("/favorites/add", methods=["POST"])
