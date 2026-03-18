@@ -43,6 +43,18 @@ body {
 
 .player-top {
     display: none !important;
+    pointer-events: none !important;
+}
+
+.player-top-actions {
+    pointer-events: none !important;
+}
+
+.player-top a,
+.player-top button,
+.player-top [tabindex] {
+    pointer-events: none !important;
+    outline: none !important;
 }
 
 .player-frame-wrap {
@@ -59,24 +71,38 @@ body {
     height: 100%;
     border: none;
     background: #000;
+    outline: none !important;
 }
 </style>
+
 <section class="player-page">
     <div class="section-card player-card">
-        <div class="player-top">
+        <div class="player-top" aria-hidden="true">
             <div>
                 <span class="badge">In riproduzione</span>
                 <h1>{{ movie.title }}</h1>
                 <p class="player-subtitle">Il progresso viene salvato automaticamente.</p>
             </div>
 
-            <div class="player-top-actions">
+            <div class="player-top-actions" aria-hidden="true">
                 {% if is_tv %}
-                    <a href="{{ url_for('tv_detail', tv_id=movie_id, season=season, episode=episode) }}" class="secondary-btn">Dettagli</a>
+                    <a
+                        href="{{ url_for('tv_detail', tv_id=movie_id, season=season, episode=episode) }}"
+                        class="secondary-btn"
+                        tabindex="-1"
+                    >Dettagli</a>
                 {% else %}
-                    <a href="{{ url_for('movie_detail', movie_id=movie_id) }}" class="secondary-btn">Dettagli</a>
+                    <a
+                        href="{{ url_for('movie_detail', movie_id=movie_id) }}"
+                        class="secondary-btn"
+                        tabindex="-1"
+                    >Dettagli</a>
                 {% endif %}
-                <a href="{{ url_for('home') }}" class="secondary-btn">Home</a>
+                <a
+                    href="{{ url_for('home') }}"
+                    class="secondary-btn"
+                    tabindex="-1"
+                >Home</a>
             </div>
         </div>
 
@@ -88,6 +114,7 @@ body {
                 allow="autoplay; fullscreen"
                 allowfullscreen
                 referrerpolicy="origin"
+                tabindex="0"
             ></iframe>
         </div>
     </div>
@@ -100,11 +127,27 @@ document.addEventListener("DOMContentLoaded", function () {
     const isTv = {{ "true" if is_tv else "false" }};
     const season = {{ season if season is not none else "null" }};
     const episode = {{ episode if episode is not none else "null" }};
+    const iframe = document.getElementById("provider-player");
 
     let lastSentTime = 0;
     let latestCurrentTime = 0;
     let latestDuration = 0;
     let hasEnded = false;
+
+    function focusPlayer() {
+        if (iframe) {
+            iframe.focus();
+        }
+    }
+
+    document
+        .querySelectorAll(".player-top a, .player-top button, .player-top [tabindex]")
+        .forEach((el) => {
+            el.setAttribute("tabindex", "-1");
+            el.blur();
+        });
+
+    setTimeout(focusPlayer, 300);
 
     function buildPayload(eventName, currentTime, duration) {
         return {
@@ -175,6 +218,22 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = nextUrl;
     }
 
+    document.addEventListener("keydown", function (event) {
+        const blockedKeys = [
+            "ArrowLeft",
+            "ArrowRight",
+            "ArrowUp",
+            "ArrowDown",
+            "Enter"
+        ];
+
+        if (blockedKeys.includes(event.key)) {
+            event.preventDefault();
+            event.stopPropagation();
+            focusPlayer();
+        }
+    }, true);
+
     window.addEventListener("message", function (event) {
         if (event.origin !== providerOrigin) {
             return;
@@ -242,4 +301,3 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
-
