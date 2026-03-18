@@ -170,16 +170,15 @@ def _serialize_continue_watching_item(item):
         return None
 
     return {
-        "tmdb_id": item.get("tmdb_id"),
-        "title": item.get("title", ""),
-        "poster_path": item.get("poster_path"),
-        "content_type": item.get("content_type", "movie"),
-        "season": item.get("season"),
-        "episode": item.get("episode"),
-        "progress_seconds": item.get("progress_seconds", 0),
-        "duration_seconds": item.get("duration_seconds", 0),
-        "completed": bool(item.get("completed", 0)),
-        "updated_at": item.get("updated_at")
+        "tmdb_id": item["tmdb_id"],
+        "title": item["title"] or "",
+        "poster_path": item["poster_path"],
+        "content_type": item["content_type"] or "movie",
+        "season": item["season"],
+        "episode": item["episode"],
+        "progress_seconds": item["progress_seconds"] or 0,
+        "duration_seconds": item["duration_seconds"] or 0,
+        "completed": bool(item["completed"] or 0)
     }
 
 
