@@ -1278,10 +1278,11 @@ def api_tv_home():
     if error_response:
         return error_response
 
-    featured_items = search_service.get_featured_content()
-    now_playing_movies = search_service.get_now_playing_movies()
-    top_rated_movies = search_service.get_top_rated_movies()
-    popular_tv = search_service.get_popular_tv()
+    featured_items = search_service.get_featured_content() or []
+    now_playing_movies = search_service.get_now_playing_movies() or []
+    top_rated_movies = search_service.get_top_rated_movies() or []
+    popular_tv = search_service.get_popular_tv() or []
+    popular_movies = search_service.get_popular_movies() or []
 
     def map_movie_item(item):
         return {
@@ -1292,7 +1293,7 @@ def api_tv_home():
             "overview": item.get("overview", ""),
             "year": (item.get("release_date") or item.get("first_air_date") or "")[:4],
             "rating": item.get("vote_average", 0),
-            "media_type": item.get("media_type", "movie")
+            "media_type": "movie"
         }
 
     def map_tv_item(item):
@@ -1308,9 +1309,25 @@ def api_tv_home():
         }
 
     featured_payload = [map_movie_item(item) for item in featured_items[:5]]
-    now_playing_payload = [map_movie_item(item) for item in now_playing_movies[:12]]
-    top_rated_payload = [map_movie_item(item) for item in top_rated_movies[:12]]
-    popular_tv_payload = [map_tv_item(item) for item in popular_tv[:12]]
+    now_playing_payload = [map_movie_item(item) for item in now_playing_movies[:18]]
+    top_rated_payload = [map_movie_item(item) for item in top_rated_movies[:18]]
+    popular_tv_payload = [map_tv_item(item) for item in popular_tv[:18]]
+    popular_movies_payload = [map_movie_item(item) for item in popular_movies[:18]]
+
+    # "Potrebbero piacerti" semplice e ricca, senza rompere nulla:
+    # mix di film popolari + top rated, senza duplicati
+    combined_candidates = popular_movies + top_rated_movies + now_playing_movies
+    seen_ids = set()
+    recommended_payload = []
+
+    for item in combined_candidates:
+        item_id = item.get("id")
+        if not item_id or item_id in seen_ids:
+            continue
+        seen_ids.add(item_id)
+        recommended_payload.append(map_movie_item(item))
+        if len(recommended_payload) >= 18:
+            break
 
     return jsonify({
         "success": True,
@@ -1330,6 +1347,16 @@ def api_tv_home():
                 "id": "popular_tv",
                 "title": "Serie popolari",
                 "items": popular_tv_payload
+            },
+            {
+                "id": "recommended_movies",
+                "title": "Potrebbero piacerti",
+                "items": recommended_payload
+            },
+            {
+                "id": "best_movies",
+                "title": "Migliori film",
+                "items": popular_movies_payload
             }
         ]
     })
