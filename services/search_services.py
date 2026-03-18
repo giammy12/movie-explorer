@@ -135,7 +135,7 @@ class SearchService:
     # CATALOGO FILM PER GENERE
     # =========================
 
-    def get_movies_grouped_by_genre(self, max_genres=6, items_per_genre=24):
+    def get_movies_grouped_by_genre(self, max_genres=12, items_per_genre=24):
         cache_key = f"catalog_movies_grouped_{max_genres}_{items_per_genre}"
         cached = get_from_cache(cache_key)
 
@@ -159,7 +159,9 @@ class SearchService:
 
             for item in items:
                 item_id = item.get("id")
-                if not item_id or item_id in seen_ids:
+                poster_path = item.get("poster_path")
+
+                if not item_id or item_id in seen_ids or not poster_path:
                     continue
 
                 seen_ids.add(item_id)
@@ -167,13 +169,19 @@ class SearchService:
                 normalized_items.append({
                     "id": item_id,
                     "title": item.get("title", ""),
-                    "poster_path": item.get("poster_path"),
+                    "poster_path": poster_path,
                     "backdrop_path": item.get("backdrop_path"),
                     "overview": item.get("overview", ""),
                     "release_date": item.get("release_date", ""),
                     "vote_average": item.get("vote_average", 0),
                     "media_type": "movie"
                 })
+
+                if len(normalized_items) >= items_per_genre:
+                    break
+
+            if len(normalized_items) < 8:
+                continue
 
             grouped.append({
                 "genre_id": genre_id,
@@ -189,7 +197,7 @@ class SearchService:
     # CATALOGO SERIE TV PER GENERE
     # =========================
 
-    def get_tv_grouped_by_genre(self, max_genres=6, items_per_genre=24):
+    def get_tv_grouped_by_genre(self, max_genres=12, items_per_genre=24):
         cache_key = f"catalog_tv_grouped_{max_genres}_{items_per_genre}"
         cached = get_from_cache(cache_key)
 
@@ -213,7 +221,9 @@ class SearchService:
 
             for item in items:
                 item_id = item.get("id")
-                if not item_id or item_id in seen_ids:
+                poster_path = item.get("poster_path")
+
+                if not item_id or item_id in seen_ids or not poster_path:
                     continue
 
                 seen_ids.add(item_id)
@@ -221,13 +231,19 @@ class SearchService:
                 normalized_items.append({
                     "id": item_id,
                     "name": item.get("name", ""),
-                    "poster_path": item.get("poster_path"),
+                    "poster_path": poster_path,
                     "backdrop_path": item.get("backdrop_path"),
                     "overview": item.get("overview", ""),
                     "first_air_date": item.get("first_air_date", ""),
                     "vote_average": item.get("vote_average", 0),
                     "media_type": "tv"
                 })
+
+                if len(normalized_items) >= items_per_genre:
+                    break
+
+            if len(normalized_items) < 8:
+                continue
 
             grouped.append({
                 "genre_id": genre_id,
